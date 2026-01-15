@@ -1,5 +1,15 @@
 import { Link } from '@inertiajs/react';
-import { BookOpen, Folder, LayoutGrid } from 'lucide-react';
+import {
+    ArrowRightLeft,
+    BookOpen,
+    ChartColumnStacked,
+    ChartPie,
+    Folder,
+    Landmark,
+    LayoutGrid,
+    Target,
+    Wallet,
+} from 'lucide-react';
 
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
@@ -13,7 +23,6 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { dashboard } from '@/routes';
 import { type NavItem } from '@/types';
 
 import AppLogo from './app-logo';
@@ -21,8 +30,38 @@ import AppLogo from './app-logo';
 const mainNavItems: NavItem[] = [
     {
         title: 'Dashboard',
-        href: dashboard(),
+        href: '/dashboard',
         icon: LayoutGrid,
+    },
+    {
+        title: 'Wallets',
+        href: '/wallets',
+        icon: Wallet,
+    },
+    {
+        title: 'Transactions',
+        href: '/transactions',
+        icon: ArrowRightLeft,
+    },
+    {
+        title: 'Budgets',
+        href: '/budgets',
+        icon: ChartPie,
+    },
+    {
+        title: 'Goals',
+        href: '/goals',
+        icon: Target,
+    },
+    {
+        title: 'Assets',
+        href: '/assets',
+        icon: Landmark,
+    },
+    {
+        title: 'Reports',
+        href: '/reports',
+        icon: ChartColumnStacked,
     },
 ];
 
@@ -46,7 +85,7 @@ export function AppSidebar() {
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
-                            <Link href={dashboard()} prefetch>
+                            <Link href="/dashboard" prefetch>
                                 <AppLogo />
                             </Link>
                         </SidebarMenuButton>
