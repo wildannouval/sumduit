@@ -11,10 +11,11 @@ class FixedAssetController extends Controller
 {
     public function index(Request $request)
     {
+        $userId = Auth::id();
         $search = $request->query('search', '');
         $category = $request->query('category', '');
 
-        $query = FixedAsset::query()->where('user_id', Auth::id());
+        $query = FixedAsset::query()->where('user_id', $userId);
 
         if ($search) {
             $query->where('name', 'like', "%{$search}%");
@@ -26,9 +27,7 @@ class FixedAssetController extends Controller
         $assets = $query->orderByDesc('created_at')->get();
 
         return Inertia::render('assets/index', [
-            'assets' => [
-                'data' => $assets // Dibungkus agar .data.map() tidak error
-            ],
+            'assets' => $assets,
             'summary' => [
                 'total_assets' => $assets->count(),
                 'total_value' => (float) $assets->sum('value'),
@@ -36,13 +35,12 @@ class FixedAssetController extends Controller
             'filters' => [
                 'search' => $search,
                 'category' => $category,
+            ],
+            'flash' => [
+                'success' => session('success'),
+                'error' => session('error'),
             ]
         ]);
-    }
-
-    public function create()
-    {
-        return Inertia::render('assets/create');
     }
 
     public function store(Request $request)
@@ -60,18 +58,13 @@ class FixedAssetController extends Controller
             ...$data,
         ]);
 
-        return redirect('/assets');
+        return redirect('/assets')->with('success', 'Aset berhasil ditambahkan!');
     }
 
-    public function edit(string $id)
+    public function update(Request $request, FixedAsset $asset)
     {
-        $asset = FixedAsset::where('user_id', Auth::id())->findOrFail($id);
-        return Inertia::render('assets/edit', ['asset' => $asset]);
-    }
+        if ($asset->user_id !== Auth::id()) abort(403);
 
-    public function update(Request $request, string $id)
-    {
-        $asset = FixedAsset::where('user_id', Auth::id())->findOrFail($id);
         $data = $request->validate([
             'name' => ['required', 'string', 'max:100'],
             'value' => ['required', 'numeric', 'min:0'],
@@ -81,12 +74,15 @@ class FixedAssetController extends Controller
         ]);
 
         $asset->update($data);
-        return redirect('/assets');
+
+        return redirect('/assets')->with('success', 'Aset berhasil diperbarui!');
     }
 
-    public function destroy(string $id)
+    public function destroy(FixedAsset $asset)
     {
-        FixedAsset::where('user_id', Auth::id())->findOrFail($id)->delete();
-        return redirect('/assets');
+        if ($asset->user_id !== Auth::id()) abort(403);
+        $asset->delete();
+
+        return redirect('/assets')->with('success', 'Aset berhasil dihapus!');
     }
 }

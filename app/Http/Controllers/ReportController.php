@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Budget;
 use App\Models\Transaction;
 use App\Models\Wallet;
 use App\Models\Category;
@@ -16,14 +15,13 @@ class ReportController extends Controller
     public function index(Request $request)
     {
         $userId = Auth::id();
-        // Menangani input bulan dan tahun
+
+        // Input bulan dan tahun
         $monthQuery = $request->query('month', now()->format('m'));
         $yearQuery = $request->query('year', now()->format('Y'));
-
-        // Memastikan format YYYY-MM untuk query database
         $monthFull = $yearQuery . '-' . str_pad($monthQuery, 2, '0', STR_PAD_LEFT);
 
-        // 1. Hitung Income & Expense
+        // 1. Kalkulasi Utama
         $income = (float) Transaction::where('user_id', $userId)
             ->where('type', 'income')
             ->whereRaw("DATE_FORMAT(occurred_at, '%Y-%m') = ?", [$monthFull])
@@ -34,7 +32,7 @@ class ReportController extends Controller
             ->whereRaw("DATE_FORMAT(occurred_at, '%Y-%m') = ?", [$monthFull])
             ->sum('amount');
 
-        // 2. Hitung Top Categories
+        // 2. Kategori Terboros (Top 5)
         $topCategories = Transaction::query()
             ->where('user_id', $userId)
             ->where('type', 'expense')
@@ -44,18 +42,15 @@ class ReportController extends Controller
             ->orderByDesc('total')
             ->take(5)
             ->get()
-            ->map(function ($item) {
-                return [
-                    'name' => Category::find($item->category_id)->name ?? 'Lainnya',
-                    'amount' => (float) $item->total
-                ];
-            });
+            ->map(fn($item) => [
+                'name' => Category::find($item->category_id)->name ?? 'Lainnya',
+                'amount' => (float) $item->total
+            ]);
 
-        // 3. Health Score & Runway
-        $emergencyBalance = (float) Wallet::where('user_id', $userId)
-            ->where('type', 'emergency')
-            ->sum('balance');
+        // 3. Skor Kesehatan & Keamanan (Runway)
+        $emergencyBalance = (float) Wallet::where('user_id', $userId)->where('type', 'emergency')->sum('balance');
 
+        // Rata-rata pengeluaran 3 bulan terakhir untuk runway yang akurat
         $avgExpense = (float) Transaction::where('user_id', $userId)
             ->where('type', 'expense')
             ->whereBetween('occurred_at', [now()->subMonths(3), now()])
@@ -64,37 +59,40 @@ class ReportController extends Controller
         $runwayMonths = $avgExpense > 0 ? ($emergencyBalance / $avgExpense) : 0;
         $savingsRate = $income > 0 ? ($income - $expense) / $income : 0;
 
-        // 4. Struktur Insights (Harus berupa Object untuk React)
+        // 4. Wawasan Otomatis (Insights)
         $insights = [];
         if ($income < $expense) {
-            $insights[] = ['title' => 'Defisit', 'body' => 'Pengeluaran melebihi pemasukan bulan ini.', 'level' => 'bad'];
+            $insights[] = ['title' => 'Defisit Arus Kas', 'body' => 'Pengeluaran Anda lebih besar dari pemasukan bulan ini.', 'level' => 'bad'];
         }
         if ($runwayMonths < 3) {
-            $insights[] = ['title' => 'Dana Darurat', 'body' => 'Simpanan Anda cukup untuk < 3 bulan.', 'level' => 'warn'];
+            $insights[] = ['title' => 'Dana Darurat Tipis', 'body' => 'Simpanan Anda hanya cukup untuk < 3 bulan ke depan.', 'level' => 'warn'];
+        }
+        if ($savingsRate > 0.2) {
+            $insights[] = ['title' => 'Penabung Hebat', 'body' => 'Anda berhasil menyisihkan lebih dari 20% pemasukan.', 'level' => 'good'];
         }
         if (empty($insights)) {
-            $insights[] = ['title' => 'Kondisi Baik', 'body' => 'Keuangan Anda bulan ini terlihat sehat.', 'level' => 'good'];
+            $insights[] = ['title' => 'Kondisi Stabil', 'body' => 'Arus kas Anda terpantau aman dan terkendali.', 'level' => 'good'];
         }
 
+        // 5. Daftar Transaksi untuk Tabel
+        $transactions = Transaction::where('user_id', $userId)
+            ->whereRaw("DATE_FORMAT(occurred_at, '%Y-%m') = ?", [$monthFull])
+            ->with(['category', 'wallet'])
+            ->orderByDesc('occurred_at')
+            ->get();
+
         return Inertia::render('reports/index', [
-            'period' => [
-                'month' => (int) $monthQuery,
-                'year' => (int) $yearQuery
-            ],
+            'period' => ['month' => (int) $monthQuery, 'year' => (int) $yearQuery],
             'summary' => [
                 'income' => $income,
                 'expense' => $expense,
                 'net' => $income - $expense,
-                'savings_rate' => $savingsRate,
-                'cash_balance' => (float) Wallet::where('user_id', $userId)->sum('balance'),
                 'runway_months' => (float) $runwayMonths,
             ],
-            'health' => [
-                'total_score' => (int) max(0, min(100, $savingsRate * 100))
-            ],
+            'health' => ['total_score' => (int) max(0, min(100, $savingsRate * 100))],
             'insights' => $insights,
             'topCategories' => $topCategories,
-            'budgetPerformance' => [] // Bisa Anda isi dengan query Budget jika perlu
+            'transactions' => $transactions,
         ]);
     }
 }

@@ -16,8 +16,8 @@ class Goal extends Model
     ];
 
     protected $casts = [
-        'target_amount' => 'decimal:2',
-        'current_amount' => 'decimal:2',
-        'due_date' => 'date',
+        'target_amount' => 'float',
+        'current_amount' => 'float',
+        'due_date' => 'date:Y-m-d',
     ];
 }

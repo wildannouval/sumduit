@@ -10,12 +10,13 @@ class FixedAsset extends Model
         'user_id',
         'name',
         'value',
+        'category', // Tambahkan ini
         'purchased_at',
         'note',
     ];
 
     protected $casts = [
         'value' => 'decimal:2',
-        'purchased_at' => 'date',
+        'purchased_at' => 'date:Y-m-d',
     ];
 }

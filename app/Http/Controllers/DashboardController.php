@@ -92,5 +92,25 @@ class DashboardController extends Controller
             'upcomingBills' => $upcomingBills,
             'recentTransactions' => $recentTransactions
         ]);
+        $insights = [];
+
+        // Cek jika pengeluaran > 90% dari total budget
+        if ($totalBudgetMonth > 0 && ($totalExpenseMonth / $totalBudgetMonth) > 0.9) {
+            $insights[] = [
+                'title' => 'Budget Kritis!',
+                'body' => 'Pengeluaran Anda sudah mencapai 90% dari budget bulan ini.',
+                'level' => 'bad'
+            ];
+        }
+
+        // Cek saldo dompet cash rendah
+        $lowCash = Wallet::where('user_id', $userId)->where('type', 'cash')->where('balance', '<', 50000)->first();
+        if ($lowCash) {
+            $insights[] = [
+                'title' => 'Saldo Cash Tipis',
+                'body' => 'Uang tunai di dompet ' . $lowCash->name . ' tersisa kurang dari 50rb.',
+                'level' => 'warn'
+            ];
+        }
     }
 }

@@ -1,191 +1,252 @@
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import AppLayout from '@/layouts/app-layout';
 import { formatIDR } from '@/lib/money';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
 
-type Insight = { title: string; body: string; level: 'good' | 'warn' | 'bad' };
-type BudgetPerf = {
-    id: number;
-    name: string;
-    budgeted: number;
-    spent: number;
-    remaining: number;
-};
-type CategoryAmount = { name: string; amount: number };
+// Shadcn UI Components & Icons
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+    CalendarSearch,
+    PieChart,
+    ReceiptText,
+    ShieldCheck,
+    TrendingDown,
+    TrendingUp,
+    Zap,
+} from 'lucide-react';
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Reports', href: '/reports' }];
 
-function pill(level: Insight['level']) {
-    if (level === 'good')
-        return 'bg-emerald-500/10 text-emerald-700 border-emerald-200';
-    if (level === 'warn')
-        return 'bg-amber-500/10 text-amber-700 border-amber-200';
-    return 'bg-red-500/10 text-red-700 border-red-200';
-}
+export default function ReportIndex({
+    period,
+    summary,
+    health,
+    insights,
+    topCategories,
+    transactions,
+}: any) {
+    const monthStr = `${period.year}-${String(period.month).padStart(2, '0')}`;
 
-export default function ReportIndex(props: {
-    period?: { month: number; year: number };
-    summary?: any;
-    health?: { total_score: number };
-    insights?: Insight[];
-    topCategories?: CategoryAmount[];
-}) {
-    // Memberikan nilai awal yang aman agar tidak "Cannot read property of undefined"
-    const {
-        period = {
-            month: new Date().getMonth() + 1,
-            year: new Date().getFullYear(),
-        },
-        summary = { income: 0, expense: 0, net: 0, runway_months: 0 },
-        health = { total_score: 0 },
-        insights = [],
-        topCategories = [],
-    } = props;
+    function applyPeriod(next: any) {
+        router.get('/reports', { ...period, ...next }, { preserveState: true });
+    }
 
-    function applyPeriod(next: Partial<{ month: number; year: number }>) {
-        router.get(
-            '/reports',
-            {
-                month: next.month ?? period.month,
-                year: next.year ?? period.year,
-            },
-            { preserveState: true, replace: true },
-        );
+    function getLevelStyle(level: string) {
+        if (level === 'good')
+            return 'bg-emerald-500/10 text-emerald-700 border-emerald-200';
+        if (level === 'warn')
+            return 'bg-amber-500/10 text-amber-700 border-amber-200';
+        return 'bg-red-500/10 text-red-700 border-red-200';
     }
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Financial Reports" />
+            <Head title="Laporan Analisis" />
+
             <div className="flex flex-col gap-6 p-6">
-                {/* Header Section */}
+                {/* Header & Filter */}
                 <div className="flex flex-wrap items-center justify-between gap-4">
                     <div>
-                        <h1 className="text-2xl font-bold">
-                            Laporan Finansial
+                        <h1 className="text-2xl font-black tracking-tight uppercase">
+                            Analisis Finansial
                         </h1>
-                        <p className="text-sm text-muted-foreground">
-                            Ringkasan performa uang Anda.
+                        <p className="flex items-center gap-1 text-sm text-muted-foreground">
+                            <CalendarSearch className="h-3 w-3" /> Rekapitulasi
+                            Data Periode {monthStr}
                         </p>
                     </div>
-                    <div className="flex items-center gap-2 rounded-lg bg-muted/50 p-2">
+                    <div className="flex gap-2 rounded-xl border bg-muted/50 p-2 shadow-sm">
                         <Input
                             type="number"
-                            className="h-9 w-16"
+                            className="h-8 w-16 border-none bg-transparent font-bold"
                             value={period.month}
                             onChange={(e) =>
-                                applyPeriod({ month: Number(e.target.value) })
+                                applyPeriod({ month: e.target.value })
                             }
                         />
                         <Input
                             type="number"
-                            className="h-9 w-24"
+                            className="h-8 w-24 border-none bg-transparent font-bold"
                             value={period.year}
                             onChange={(e) =>
-                                applyPeriod({ year: Number(e.target.value) })
+                                applyPeriod({ year: e.target.value })
                             }
                         />
                     </div>
                 </div>
 
                 {/* Summary Cards */}
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                    <CardSummary
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+                    <CardStat
                         label="Total Pemasukan"
                         value={summary.income}
+                        icon={<TrendingUp className="h-4 w-4" />}
                         color="text-emerald-600"
                     />
-                    <CardSummary
+                    <CardStat
                         label="Total Pengeluaran"
                         value={summary.expense}
+                        icon={<TrendingDown className="h-4 w-4" />}
                         color="text-red-600"
                     />
-                    <CardSummary
-                        label="Net Cashflow"
+                    <CardStat
+                        label="Arus Kas Bersih"
                         value={summary.net}
+                        icon={<Zap className="h-4 w-4" />}
                         color={
-                            summary.net >= 0 ? 'text-blue-600' : 'text-red-600'
+                            summary.net >= 0 ? 'text-blue-600' : 'text-red-700'
                         }
                     />
-                    <CardSummary
-                        label="Skor Kesehatan"
-                        value={`${health.total_score}/100`}
-                        isCurrency={false}
-                    />
+                    <div className="flex flex-col items-center justify-center rounded-2xl border bg-slate-900 p-5 text-white shadow-xl">
+                        <span className="text-[10px] font-bold tracking-widest uppercase opacity-50">
+                            Financial Score
+                        </span>
+                        <div className="mt-1 text-3xl font-black">
+                            {health.total_score}%
+                        </div>
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-                    {/* Insights & Top Categories */}
                     <div className="space-y-6 lg:col-span-2">
-                        <div className="rounded-xl border bg-card p-5">
-                            <h2 className="mb-4 font-bold">Wawasan Cerdas</h2>
-                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                {insights.map((i, idx) => (
+                        {/* Automated Insights */}
+                        <div className="rounded-2xl border bg-card p-5 shadow-sm">
+                            <h2 className="mb-4 flex items-center gap-2 text-xs font-bold uppercase opacity-70">
+                                <ShieldCheck className="h-4 w-4" /> Wawasan
+                                Cerdas
+                            </h2>
+                            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                                {insights.map((insight: any, idx: number) => (
                                     <div
                                         key={idx}
-                                        className={`rounded-xl border p-4 ${pill(i.level)}`}
+                                        className={`rounded-xl border p-4 ${getLevelStyle(insight.level)}`}
                                     >
-                                        <div className="text-sm font-bold">
-                                            {i.title}
+                                        <div className="text-sm font-bold tracking-tight uppercase">
+                                            {insight.title}
                                         </div>
-                                        <p className="mt-1 text-xs opacity-80">
-                                            {i.body}
+                                        <p className="mt-1 text-xs leading-relaxed font-medium opacity-90">
+                                            {insight.body}
                                         </p>
                                     </div>
                                 ))}
                             </div>
                         </div>
 
-                        <div className="rounded-xl border bg-card p-5">
-                            <h2 className="mb-4 font-bold">
-                                Pengeluaran Terbesar
-                            </h2>
-                            <div className="space-y-3">
-                                {topCategories.map((c, idx) => (
-                                    <div
-                                        key={idx}
-                                        className="flex items-center justify-between border-b pb-2 last:border-0"
-                                    >
-                                        <span className="text-sm">
-                                            {c.name}
-                                        </span>
-                                        <span className="text-sm font-semibold">
-                                            {formatIDR(c.amount)}
-                                        </span>
-                                    </div>
-                                ))}
+                        {/* Transaction DataTable */}
+                        <div className="overflow-hidden rounded-2xl border bg-card shadow-sm">
+                            <div className="flex items-center gap-2 border-b bg-muted/20 p-4 text-xs font-bold tracking-widest uppercase opacity-70">
+                                <ReceiptText className="h-4 w-4" /> Riwayat
+                                Transaksi Bulan Ini
+                            </div>
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left text-sm">
+                                    <thead className="border-b bg-muted/10 text-[10px] font-bold text-muted-foreground uppercase">
+                                        <tr>
+                                            <th className="p-4">Tanggal</th>
+                                            <th className="p-4">Kategori</th>
+                                            <th className="p-4 text-right">
+                                                Jumlah
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y">
+                                        {transactions.map((t: any) => (
+                                            <tr
+                                                key={t.id}
+                                                className="transition-colors hover:bg-muted/10"
+                                            >
+                                                <td className="p-4 font-medium opacity-60">
+                                                    {t.occurred_at}
+                                                </td>
+                                                <td className="p-4">
+                                                    <div className="font-bold">
+                                                        {t.category?.name ||
+                                                            'Lainnya'}
+                                                    </div>
+                                                    <div className="text-[10px] font-bold tracking-tighter uppercase opacity-50">
+                                                        {t.wallet?.name}
+                                                    </div>
+                                                </td>
+                                                <td
+                                                    className={`p-4 text-right font-black ${t.type === 'income' ? 'text-emerald-600' : 'text-red-600'}`}
+                                                >
+                                                    {t.type === 'income'
+                                                        ? '+'
+                                                        : '-'}
+                                                    {formatIDR(t.amount)}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                        {transactions.length === 0 && (
+                                            <tr>
+                                                <td
+                                                    colSpan={3}
+                                                    className="p-12 text-center text-muted-foreground italic"
+                                                >
+                                                    Tidak ada transaksi
+                                                    tercatat.
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
 
-                    {/* Sidebar Info */}
-                    <div className="space-y-4">
-                        <div className="flex flex-col items-center rounded-xl border bg-slate-900 p-6 text-white dark:bg-slate-800">
-                            <span className="text-xs tracking-widest uppercase opacity-60">
-                                Runway Dana Darurat
+                    {/* Sidebar: Top Categories & Runway */}
+                    <div className="space-y-6">
+                        <div className="rounded-2xl border bg-card p-5 shadow-sm">
+                            <h2 className="mb-4 flex items-center gap-2 text-xs font-bold uppercase opacity-70">
+                                <PieChart className="h-4 w-4" /> Pengeluaran
+                                Terbesar
+                            </h2>
+                            <div className="space-y-4">
+                                {topCategories.map((c: any, idx: number) => (
+                                    <div
+                                        key={idx}
+                                        className="group flex items-center justify-between"
+                                    >
+                                        <div className="text-sm font-medium transition-colors group-hover:text-red-600">
+                                            {c.name}
+                                        </div>
+                                        <div className="text-sm font-black tracking-tight">
+                                            {formatIDR(c.amount)}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="flex flex-col items-center rounded-2xl border bg-slate-100 p-6 shadow-inner dark:bg-slate-800">
+                            <span className="text-center text-[10px] font-black tracking-[0.2em] uppercase opacity-60">
+                                Emergency Runway
                             </span>
-                            <span className="my-3 text-5xl font-black">
+                            <div className="my-2 text-5xl font-black tracking-tighter text-slate-900 dark:text-white">
                                 {Number(summary.runway_months).toFixed(1)}
-                            </span>
-                            <span className="text-center text-xs opacity-60">
-                                Bulan bertahan jika tanpa pemasukan sama sekali.
+                            </div>
+                            <span className="text-[10px] font-bold uppercase opacity-60">
+                                Bulan Keamanan Finansial
                             </span>
                         </div>
-                        <Button
-                            className="h-12 w-full"
-                            variant="outline"
-                            onClick={() => router.visit('/budgets')}
-                        >
-                            Kelola Budget
-                        </Button>
-                        <Button
-                            className="h-12 w-full"
-                            variant="outline"
-                            onClick={() => router.visit('/transactions')}
-                        >
-                            Detail Transaksi
-                        </Button>
+
+                        <div className="grid grid-cols-1 gap-2">
+                            <Button
+                                variant="outline"
+                                className="h-11 w-full rounded-xl font-bold"
+                                onClick={() => router.visit('/transactions')}
+                            >
+                                Buka Arus Kas
+                            </Button>
+                            <Button
+                                variant="outline"
+                                className="h-11 w-full rounded-xl font-bold"
+                                onClick={() => router.visit('/budgets')}
+                            >
+                                Lihat Anggaran
+                            </Button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -193,15 +254,15 @@ export default function ReportIndex(props: {
     );
 }
 
-// Sub-komponen untuk tampilan yang lebih bersih
-function CardSummary({ label, value, color = '', isCurrency = true }: any) {
+// Sub-komponen Stat Card
+function CardStat({ label, value, icon, color }: any) {
     return (
-        <div className="rounded-xl border bg-card p-4 shadow-sm">
-            <div className="text-xs font-medium text-muted-foreground uppercase">
-                {label}
+        <div className="rounded-2xl border bg-card p-5 shadow-sm transition-shadow hover:shadow-md">
+            <div className="mb-1 flex items-center gap-2 text-[10px] font-bold tracking-widest text-muted-foreground uppercase opacity-70">
+                {icon} {label}
             </div>
-            <div className={`mt-1 text-xl font-bold ${color}`}>
-                {isCurrency ? formatIDR(value) : value}
+            <div className={`truncate text-xl font-black ${color}`}>
+                {formatIDR(value)}
             </div>
         </div>
     );

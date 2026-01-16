@@ -11,75 +11,55 @@ class CategoryController extends Controller
 {
     public function index()
     {
-        $categories = Category::query()
-            ->where('user_id', Auth::id())
-            ->orderBy('type')
-            ->orderBy('group')
-            ->orderBy('name')
-            ->get(['id', 'name', 'group', 'type']);
-
         return Inertia::render('categories/index', [
-            'categories' => $categories,
+            'categories' => Category::where('user_id', Auth::id())
+                ->orderBy('type')
+                ->orderBy('name')
+                ->get(),
+            'flash' => [
+                'success' => session('success'),
+                'error' => session('error'),
+            ]
         ]);
-    }
-
-    public function create()
-    {
-        return Inertia::render('categories/create');
     }
 
     public function store(Request $request)
     {
         $data = $request->validate([
-            'name' => ['required', 'string', 'max:80'],
-            'group' => ['required', 'in:needs,wants,saving'],
-            'type' => ['required', 'in:income,expense'],
+            'name' => 'required|string|max:50',
+            'type' => 'required|in:income,expense',
+            'group' => 'required|in:needs,wants,saving',
         ]);
 
         Category::create([
             'user_id' => Auth::id(),
-            ...$data,
+            ...$data
         ]);
 
-        return redirect()->route('categories.index');
+        return redirect('/categories')->with('success', 'Kategori baru berhasil ditambahkan!');
     }
 
-    public function edit(string $category)
+    public function update(Request $request, Category $category)
     {
-        $c = Category::query()
-            ->where('user_id', Auth::id())
-            ->findOrFail($category);
-
-        return Inertia::render('categories/edit', [
-            'category' => $c->only(['id', 'name', 'group', 'type']),
-        ]);
-    }
-
-    public function update(Request $request, string $category)
-    {
-        $c = Category::query()
-            ->where('user_id', Auth::id())
-            ->findOrFail($category);
+        if ($category->user_id !== Auth::id()) abort(403);
 
         $data = $request->validate([
-            'name' => ['required', 'string', 'max:80'],
-            'group' => ['required', 'in:needs,wants,saving'],
-            'type' => ['required', 'in:income,expense'],
+            'name' => 'required|string|max:50',
+            'type' => 'required|in:income,expense',
+            'group' => 'required|in:needs,wants,saving',
         ]);
 
-        $c->update($data);
+        $category->update($data);
 
-        return redirect()->route('categories.index');
+        return redirect('/categories')->with('success', 'Perubahan kategori disimpan!');
     }
 
-    public function destroy(string $category)
+    public function destroy(Category $category)
     {
-        $c = Category::query()
-            ->where('user_id', Auth::id())
-            ->findOrFail($category);
+        if ($category->user_id !== Auth::id()) abort(403);
 
-        $c->delete();
+        $category->delete();
 
-        return redirect()->route('categories.index');
+        return redirect('/categories')->with('success', 'Kategori telah dihapus.');
     }
 }

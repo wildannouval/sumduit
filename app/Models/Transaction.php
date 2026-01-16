@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Transaction extends Model
 {
@@ -10,14 +11,30 @@ class Transaction extends Model
         'user_id',
         'wallet_id',
         'category_id',
-        'type', // income|expense
+        'goal_id',
+        'type',
         'amount',
         'occurred_at',
-        'note',
+        'note'
     ];
 
     protected $casts = [
-        'amount' => 'decimal:2',
-        'occurred_at' => 'date',
+        'amount' => 'float',
+        'occurred_at' => 'date:Y-m-d',
     ];
+
+    public function wallet(): BelongsTo
+    {
+        return $this->belongsTo(Wallet::class);
+    }
+
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(Category::class);
+    }
+
+    public function goal(): BelongsTo
+    {
+        return $this->belongsTo(Goal::class);
+    }
 }

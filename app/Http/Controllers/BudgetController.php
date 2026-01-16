@@ -8,50 +8,46 @@ use App\Models\Transaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\DB;
 
 class BudgetController extends Controller
 {
     public function index(Request $request)
     {
+        $userId = Auth::id();
         $month = (string) $request->query('month', now()->format('Y-m'));
         $search = $request->query('search', '');
 
-        // Ambil data budget dengan filter pencarian jika ada
+        // Query Budget dengan kalkulasi pengeluaran per kategori
         $budgetsQuery = Budget::query()
-            ->where('user_id', Auth::id())
-            ->where('month', $month);
+            ->where('user_id', $userId)
+            ->where('month', $month)
+            ->with('category:id,name,group');
 
         if ($search) {
-            $budgetsQuery->whereHas('category', function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%");
-            });
+            $budgetsQuery->whereHas('category', fn($q) => $q->where('name', 'like', "%{$search}%"));
         }
 
-        $budgets = $budgetsQuery->orderBy('group')
-            ->orderByDesc('amount')
-            ->get();
+        $budgets = $budgetsQuery->get()->map(function ($budget) use ($userId, $month) {
+            // Hitung pengeluaran untuk kategori ini di bulan ini
+            $spent = Transaction::where('user_id', $userId)
+                ->where('category_id', $budget->category_id)
+                ->whereRaw("DATE_FORMAT(occurred_at, '%Y-%m') = ?", [$month])
+                ->where('type', 'expense')
+                ->sum('amount');
 
-        // Hitung total pengeluaran bulan tersebut
-        $totalSpent = Transaction::query()
-            ->where('user_id', Auth::id())
-            ->where('type', 'expense')
-            ->whereRaw("DATE_FORMAT(occurred_at, '%Y-%m') = ?", [$month])
-            ->sum('amount') ?? 0;
+            $budget->spent = (float) $spent;
+            $budget->remaining = (float) ($budget->amount - $spent);
+            return $budget;
+        });
 
+        // Ringkasan Total
         $totalBudget = $budgets->sum('amount');
-
-        $categories = Category::query()
-            ->where('user_id', Auth::id())
-            ->where('type', 'expense')
-            ->orderBy('group')->orderBy('name')
-            ->get(['id', 'name', 'group', 'type']);
+        $totalSpent = $budgets->sum('spent');
 
         return Inertia::render('budgets/index', [
-            'budgets' => [
-                'data' => $budgets,
-                // Tambahkan link kosong jika tidak pakai pagination asli Laravel
-                'links' => []
-            ],
+            'budgets' => $budgets,
+            'categories' => Category::where('user_id', $userId)->where('type', 'expense')->get(),
             'summary' => [
                 'month' => $month,
                 'total_budget' => (float) $totalBudget,
@@ -59,27 +55,14 @@ class BudgetController extends Controller
                 'total_remaining' => (float) ($totalBudget - $totalSpent),
                 'utilization_pct' => $totalBudget > 0 ? ($totalSpent / $totalBudget) * 100 : 0,
             ],
-            'categories' => $categories,
-            // BAGIAN INI WAJIB ADA UNTUK MEMPERBAIKI ERROR 'search'
             'filters' => [
                 'search' => $search,
                 'month' => $month,
             ],
-            'wallets' => [] // Tambahkan jika memang ada data wallet yang dikirim
-        ]);
-    }
-
-    // Method store, edit, update, destroy tetap sama seperti kode Anda sebelumnya...
-    public function create()
-    {
-        $categories = Category::query()
-            ->where('user_id', Auth::id())
-            ->where('type', 'expense')
-            ->orderBy('group')->orderBy('name')
-            ->get(['id', 'name', 'group']);
-
-        return Inertia::render('budgets/create', [
-            'categories' => $categories,
+            'flash' => [
+                'success' => session('success'),
+                'error' => session('error'),
+            ]
         ]);
     }
 
@@ -87,49 +70,43 @@ class BudgetController extends Controller
     {
         $data = $request->validate([
             'month' => ['required', 'regex:/^\d{4}-\d{2}$/'],
-            'group' => ['required', 'in:needs,wants,saving'],
-            'category_id' => ['nullable', 'integer'],
+            'category_id' => ['required', 'integer', 'exists:categories,id'],
             'amount' => ['required', 'numeric', 'min:0'],
+            'notes' => ['nullable', 'string', 'max:255'],
         ]);
+
+        // Ambil group dari kategori secara otomatis
+        $category = Category::findOrFail($data['category_id']);
 
         Budget::create([
             'user_id' => Auth::id(),
+            'group' => $category->group,
             ...$data,
         ]);
 
-        return redirect('/budgets?month=' . $data['month']);
+        return back()->with('success', 'Anggaran berhasil dibuat!');
     }
 
-    public function edit(string $id)
+    public function update(Request $request, Budget $budget)
     {
-        $b = Budget::where('user_id', Auth::id())->findOrFail($id);
-        $categories = Category::where('user_id', Auth::id())->where('type', 'expense')->get();
-
-        return Inertia::render('budgets/edit', [
-            'budget' => $b,
-            'categories' => $categories,
-        ]);
-    }
-
-    public function update(Request $request, string $id)
-    {
-        $b = Budget::where('user_id', Auth::id())->findOrFail($id);
         $data = $request->validate([
             'month' => ['required', 'regex:/^\d{4}-\d{2}$/'],
-            'group' => ['required', 'in:needs,wants,saving'],
-            'category_id' => ['nullable', 'integer'],
+            'category_id' => ['required', 'integer', 'exists:categories,id'],
             'amount' => ['required', 'numeric', 'min:0'],
+            'notes' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $b->update($data);
-        return redirect('/budgets?month=' . $data['month']);
+        $category = Category::findOrFail($data['category_id']);
+        $data['group'] = $category->group;
+
+        $budget->update($data);
+
+        return back()->with('success', 'Anggaran berhasil diperbarui!');
     }
 
-    public function destroy(string $id)
+    public function destroy(Budget $budget)
     {
-        $b = Budget::where('user_id', Auth::id())->findOrFail($id);
-        $month = $b->month;
-        $b->delete();
-        return redirect('/budgets?month=' . $month);
+        $budget->delete();
+        return back()->with('success', 'Anggaran berhasil dihapus!');
     }
 }

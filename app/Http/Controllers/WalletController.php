@@ -14,25 +14,25 @@ class WalletController extends Controller
         $wallets = Wallet::query()
             ->where('user_id', Auth::id())
             ->orderBy('name')
-            ->get(['id', 'type', 'name', 'account_number', 'balance', 'created_at']);
+            ->get();
 
         return Inertia::render('wallets/index', [
             'wallets' => $wallets,
+            // Mengambil flash message dari session untuk Alert keberhasilan
+            'flash' => [
+                'success' => session('success'),
+                'error' => session('error'),
+            ]
         ]);
-    }
-
-    public function create()
-    {
-        return Inertia::render('wallets/create');
     }
 
     public function store(Request $request)
     {
         $data = $request->validate([
-            'type' => ['required', 'string', 'max:50'],
+            'type' => ['required', 'string'],
             'name' => ['required', 'string', 'max:100'],
             'account_number' => ['nullable', 'string', 'max:100'],
-            'balance' => ['required', 'numeric', 'min:0'],
+            'balance' => ['required', 'numeric'],
         ]);
 
         Wallet::create([
@@ -40,46 +40,37 @@ class WalletController extends Controller
             ...$data,
         ]);
 
-        return redirect()->route('wallets.index');
+        return redirect('/wallets')->with('success', 'Wallet berhasil ditambahkan!');
     }
 
-    public function edit(string $wallet)
+    public function update(Request $request, Wallet $wallet)
     {
-        $w = Wallet::query()
-            ->where('user_id', Auth::id())
-            ->findOrFail($wallet);
-
-        return Inertia::render('wallets/edit', [
-            'wallet' => $w->only(['id', 'type', 'name', 'account_number', 'balance']),
-        ]);
-    }
-
-    public function update(Request $request, string $wallet)
-    {
-        $w = Wallet::query()
-            ->where('user_id', Auth::id())
-            ->findOrFail($wallet);
+        $this->authorizeUser($wallet);
 
         $data = $request->validate([
-            'type' => ['required', 'string', 'max:50'],
+            'type' => ['required', 'string'],
             'name' => ['required', 'string', 'max:100'],
             'account_number' => ['nullable', 'string', 'max:100'],
-            'balance' => ['required', 'numeric', 'min:0'],
+            'balance' => ['required', 'numeric'],
         ]);
 
-        $w->update($data);
+        $wallet->update($data);
 
-        return redirect()->route('wallets.index');
+        return redirect('/wallets')->with('success', 'Wallet berhasil diperbarui!');
     }
 
-    public function destroy(string $wallet)
+    public function destroy(Wallet $wallet)
     {
-        $w = Wallet::query()
-            ->where('user_id', Auth::id())
-            ->findOrFail($wallet);
+        $this->authorizeUser($wallet);
+        $wallet->delete();
 
-        $w->delete();
+        return redirect('/wallets')->with('success', 'Wallet berhasil dihapus!');
+    }
 
-        return redirect()->route('wallets.index');
+    private function authorizeUser(Wallet $wallet)
+    {
+        if ($wallet->user_id !== Auth::id()) {
+            abort(403);
+        }
     }
 }

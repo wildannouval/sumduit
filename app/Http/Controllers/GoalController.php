@@ -12,23 +12,27 @@ class GoalController extends Controller
 {
     public function index()
     {
+        $userId = Auth::id();
+
         $goals = Goal::query()
-            ->where('user_id', Auth::id())
+            ->where('user_id', $userId)
             ->orderByDesc('created_at')
-            ->get(['id', 'name', 'target_amount', 'current_amount', 'due_date', 'note']);
+            ->get()
+            ->map(function ($goal) {
+                $goal->progress_pct = $goal->target_amount > 0
+                    ? round(($goal->current_amount / $goal->target_amount) * 100)
+                    : 0;
+                $goal->remaining = max(0, $goal->target_amount - $goal->current_amount);
+                return $goal;
+            });
 
         return Inertia::render('goals/index', [
-            'goals' => [
-                'data' => $goals // Memastikan struktur .data tersedia untuk React
-            ],
-        ]);
-    }
-
-    public function create()
-    {
-        $wallets = Wallet::where('user_id', Auth::id())->get(['id', 'name']);
-        return Inertia::render('goals/create', [
-            'wallets' => $wallets // Kirim wallets agar select option tidak error
+            'goals' => $goals,
+            'wallets' => Wallet::where('user_id', $userId)->get(['id', 'name']),
+            'flash' => [
+                'success' => session('success'),
+                'error' => session('error'),
+            ]
         ]);
     }
 
@@ -39,8 +43,6 @@ class GoalController extends Controller
             'target_amount' => ['required', 'numeric', 'min:0'],
             'current_amount' => ['required', 'numeric', 'min:0'],
             'due_date' => ['nullable', 'date'],
-            'wallet_id' => ['nullable', 'integer'],
-            'status' => ['required', 'in:active,paused,done'],
             'note' => ['nullable', 'string', 'max:200'],
         ]);
 
@@ -49,40 +51,31 @@ class GoalController extends Controller
             ...$data,
         ]);
 
-        return redirect('/goals');
+        return redirect('/goals')->with('success', 'Target tabungan berhasil dibuat!');
     }
 
-    public function edit(string $id)
+    public function update(Request $request, Goal $goal)
     {
-        $g = Goal::where('user_id', Auth::id())->findOrFail($id);
-        $wallets = Wallet::where('user_id', Auth::id())->get(['id', 'name']);
+        if ($goal->user_id !== Auth::id()) abort(403);
 
-        return Inertia::render('goals/edit', [
-            'goal' => $g,
-            'wallets' => $wallets
-        ]);
-    }
-
-    public function update(Request $request, string $id)
-    {
-        $g = Goal::where('user_id', Auth::id())->findOrFail($id);
         $data = $request->validate([
             'name' => ['required', 'string', 'max:100'],
             'target_amount' => ['required', 'numeric', 'min:0'],
             'current_amount' => ['required', 'numeric', 'min:0'],
             'due_date' => ['nullable', 'date'],
-            'wallet_id' => ['nullable', 'integer'],
-            'status' => ['required', 'in:active,paused,done'],
             'note' => ['nullable', 'string', 'max:200'],
         ]);
 
-        $g->update($data);
-        return redirect('/goals');
+        $goal->update($data);
+
+        return redirect('/goals')->with('success', 'Target tabungan diperbarui!');
     }
 
-    public function destroy(string $id)
+    public function destroy(Goal $goal)
     {
-        Goal::where('user_id', Auth::id())->findOrFail($id)->delete();
-        return redirect('/goals');
+        if ($goal->user_id !== Auth::id()) abort(403);
+        $goal->delete();
+
+        return redirect('/goals')->with('success', 'Target tabungan telah dihapus.');
     }
 }

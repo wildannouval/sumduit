@@ -13,6 +13,8 @@ use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\GoalController;
 use App\Http\Controllers\FixedAssetController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\DebtController;
+use App\Http\Controllers\RecurringTemplateController;
 
 Route::get('/', function () {
     return Inertia::render('welcome', [
@@ -21,32 +23,34 @@ Route::get('/', function () {
 })->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    // Dashboard
+    // Dashboard (Pastikan class DashboardController memiliki __invoke)
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
 
-    // Wallet Transfer (letakkan sebelum resource biar jelas, walau except show sudah aman)
-    Route::get('/wallets/transfer', [WalletTransferController::class, 'create'])
-        ->name('wallets.transfer.create');
-    Route::post('/wallets/transfer', [WalletTransferController::class, 'store'])
-        ->name('wallets.transfer.store');
+    // Wallets
+    Route::post('/wallets/transfer', [WalletTransferController::class, 'store'])->name('wallets.transfer.store');
+    Route::resource('wallets', WalletController::class)->except(['show', 'create', 'edit']);
 
-    // Wallets CRUD
-    Route::resource('wallets', WalletController::class)->except(['show']);
+    // Transactions
+    Route::resource('transactions', TransactionController::class)->except(['show', 'create', 'edit']);
 
-    // Categories (dipakai transaksi/budget)
-    Route::resource('categories', CategoryController::class)->except(['show']);
+    // Categories
+    Route::resource('categories', CategoryController::class)->except(['show', 'create', 'edit']);
 
-    // Transactions CRUD + search/filter via query params
-    Route::resource('transactions', TransactionController::class)->except(['show']);
+    // Budgets
+    Route::resource('budgets', BudgetController::class)->except(['show', 'create', 'edit']);
 
-    // Budgets CRUD
-    Route::resource('budgets', BudgetController::class)->except(['show']);
+    // Goals
+    Route::resource('goals', GoalController::class)->except(['show', 'create', 'edit']);
 
-    // Goals CRUD
-    Route::resource('goals', GoalController::class)->except(['show']);
+    // Assets
+    Route::resource('assets', FixedAssetController::class)->except(['show', 'create', 'edit']);
 
-    // Assets CRUD
-    Route::resource('assets', FixedAssetController::class)->except(['show']);
+    // Debts (Hutang & Piutang)
+    Route::post('/debts/{id}/pay', [DebtController::class, 'pay'])->name('debts.pay');
+    Route::resource('debts', DebtController::class)->except(['show', 'create', 'edit']);
+
+    // Recurring (Tagihan Rutin)
+    Route::resource('recurring', RecurringTemplateController::class)->except(['show', 'create', 'edit']);
 
     // Reports
     Route::get('/reports', [ReportController::class, 'index'])->name('reports');

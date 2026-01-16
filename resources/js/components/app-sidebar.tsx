@@ -1,12 +1,15 @@
 import { Link } from '@inertiajs/react';
 import {
-    ArrowRightLeft,
+    AlarmClock,
+    BarChart3,
     BookOpen,
-    ChartColumnStacked,
-    ChartPie,
     Folder,
-    Landmark,
+    HandCoins,
     LayoutGrid,
+    Package,
+    PiggyBank,
+    ReceiptText,
+    Tags,
     Target,
     Wallet,
 } from 'lucide-react';
@@ -34,34 +37,49 @@ const mainNavItems: NavItem[] = [
         icon: LayoutGrid,
     },
     {
-        title: 'Wallets',
+        title: 'Arus Kas',
+        href: '/transactions',
+        icon: ReceiptText,
+    },
+    {
+        title: 'Dompet',
         href: '/wallets',
         icon: Wallet,
     },
     {
-        title: 'Transactions',
-        href: '/transactions',
-        icon: ArrowRightLeft,
-    },
-    {
-        title: 'Budgets',
+        title: 'Anggaran',
         href: '/budgets',
-        icon: ChartPie,
+        icon: PiggyBank,
     },
     {
-        title: 'Goals',
+        title: 'Target',
         href: '/goals',
         icon: Target,
     },
     {
-        title: 'Assets',
+        title: 'Aset Tetap',
         href: '/assets',
-        icon: Landmark,
+        icon: Package,
     },
     {
-        title: 'Reports',
+        title: 'Hutang & Piutang',
+        href: '/debts',
+        icon: HandCoins,
+    },
+    {
+        title: 'Tagihan Rutin',
+        href: '/recurring',
+        icon: AlarmClock,
+    },
+    {
+        title: 'Laporan',
         href: '/reports',
-        icon: ChartColumnStacked,
+        icon: BarChart3,
+    },
+    {
+        title: 'Kategori',
+        href: '/categories',
+        icon: Tags,
     },
 ];
 
