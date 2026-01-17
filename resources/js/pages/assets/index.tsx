@@ -132,34 +132,34 @@ export default function AssetIndex({ assets, summary, filters, flash }: any) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Manajemen Aset" />
 
-            <div className="flex flex-col gap-6 p-6">
+            <div className="flex flex-col gap-6 p-6 font-sans">
                 {/* 1. Notifications */}
                 {flash.success && (
                     <Alert className="border-emerald-200 bg-emerald-50 text-emerald-900 dark:bg-emerald-950/20">
                         <CheckCircle2 className="h-4 w-4 stroke-emerald-600" />
-                        <AlertTitle className="text-xs font-bold tracking-widest uppercase">
+                        <AlertTitle className="text-xs font-black tracking-widest text-emerald-700 uppercase">
                             Berhasil
                         </AlertTitle>
-                        <AlertDescription className="text-xs">
+                        <AlertDescription className="text-xs font-medium">
                             {flash.success}
                         </AlertDescription>
                     </Alert>
                 )}
 
-                {/* 2. Header */}
+                {/* 2. Header Area */}
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <h1 className="flex items-center gap-2 text-2xl font-black tracking-tight uppercase">
-                            <Package className="h-6 w-6 text-primary" />{' '}
+                        <h1 className="flex items-center gap-3 text-3xl font-black tracking-tighter uppercase">
+                            <Package className="h-8 w-8 text-primary" />{' '}
                             Inventaris Aset
                         </h1>
-                        <p className="text-xs tracking-widest text-muted-foreground uppercase">
-                            Daftar kekayaan tetap dan barang berharga.
+                        <p className="mt-1 text-xs font-bold tracking-[0.2em] text-muted-foreground uppercase">
+                            Monitor kekayaan tetap dan barang berharga Anda.
                         </p>
                     </div>
                     <Button
                         onClick={() => setIsAddOpen(true)}
-                        className="h-10 px-6 text-xs font-bold tracking-widest uppercase shadow-lg"
+                        className="h-10 px-6 text-xs font-black tracking-widest uppercase shadow-lg transition-transform hover:scale-105"
                     >
                         <PlusCircle className="mr-2 h-4 w-4" /> Tambah Aset
                     </Button>
@@ -167,50 +167,46 @@ export default function AssetIndex({ assets, summary, filters, flash }: any) {
 
                 {/* 3. Summary Section */}
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                    <Card className="relative overflow-hidden border-none bg-slate-950 text-white shadow-sm ring-1 ring-border md:col-span-2 dark:bg-slate-900">
-                        <div className="pointer-events-none absolute top-[-10px] right-[-10px] rotate-12 text-white opacity-10">
-                            <TrendingUp size={150} />
+                    <Card className="relative overflow-hidden border-none bg-slate-950 text-white shadow-xl ring-1 ring-border md:col-span-2 dark:bg-slate-900">
+                        <div className="absolute top-[-10px] right-[-10px] rotate-12 opacity-10">
+                            <TrendingUp size={160} />
                         </div>
                         <CardHeader className="pb-2">
-                            <CardDescription className="text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                            <CardDescription className="text-[10px] font-black tracking-[0.2em] text-slate-400 uppercase">
                                 Estimasi Nilai Total Aset
                             </CardDescription>
-                            <CardTitle className="text-4xl font-black">
+                            <CardTitle className="text-4xl font-black tracking-tighter tabular-nums">
                                 {formatIDR(summary.total_value)}
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <p className="text-xs text-slate-400 italic">
+                            <p className="text-xs font-medium tracking-wide text-slate-500 uppercase">
                                 Terhitung dari {summary.total_assets} item
-                                barang terdaftar.
+                                terdaftar.
                             </p>
                         </CardContent>
                     </Card>
 
-                    <Card className="border-none bg-card shadow-sm ring-1 ring-border">
-                        <CardHeader className="pb-2">
-                            <CardDescription className="text-[10px] font-black tracking-widest uppercase">
-                                Jumlah Koleksi
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="flex h-full items-center pb-6">
-                            <div className="flex items-baseline gap-2 text-4xl font-black">
-                                {summary.total_assets}{' '}
-                                <span className="text-sm font-bold tracking-tighter text-muted-foreground uppercase">
-                                    Item
-                                </span>
-                            </div>
-                        </CardContent>
+                    <Card className="flex flex-col justify-center border-none bg-card px-6 shadow-sm ring-1 ring-border">
+                        <CardDescription className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">
+                            Jumlah Koleksi
+                        </CardDescription>
+                        <div className="mt-1 flex items-baseline gap-2 text-3xl font-black">
+                            {summary.total_assets}{' '}
+                            <span className="text-xs font-bold tracking-tighter text-muted-foreground uppercase">
+                                Item
+                            </span>
+                        </div>
                     </Card>
                 </div>
 
-                {/* 4. Filters & Search */}
-                <div className="flex flex-col items-center justify-between gap-3 rounded-xl bg-muted/20 p-4 ring-1 ring-border md:flex-row">
+                {/* 4. Filter & Search Toolbar */}
+                <div className="flex flex-col items-center justify-between gap-4 rounded-xl border-b bg-muted/20 p-4 ring-1 ring-border md:flex-row">
                     <div className="relative w-full md:max-w-sm">
-                        <Search className="absolute top-2.5 left-3 h-4 w-4 text-muted-foreground" />
+                        <Search className="absolute top-2.5 left-3 h-4 w-4 text-muted-foreground opacity-50" />
                         <Input
                             placeholder="Cari nama aset..."
-                            className="h-9 bg-background pl-9 text-sm"
+                            className="h-9 border-muted bg-background pl-9 text-sm font-medium"
                             value={filters.search}
                             onChange={(e) =>
                                 router.get(
@@ -260,22 +256,22 @@ export default function AssetIndex({ assets, summary, filters, flash }: any) {
                     </div>
                 </div>
 
-                {/* 5. Assets Table */}
+                {/* 5. Assets Table (Shadcn Data Table) */}
                 <Card className="overflow-hidden border-none shadow-sm ring-1 ring-border">
                     <CardContent className="p-0">
                         <Table>
-                            <TableHeader className="bg-muted/50 text-[10px] font-black uppercase">
+                            <TableHeader className="border-b bg-muted/50">
                                 <TableRow>
-                                    <TableHead className="px-4 py-3">
+                                    <TableHead className="px-6 py-4 text-[11px] font-black tracking-widest text-muted-foreground uppercase">
                                         Informasi Aset
                                     </TableHead>
-                                    <TableHead className="py-3 text-center">
+                                    <TableHead className="py-4 text-center text-[11px] font-black tracking-widest text-muted-foreground uppercase">
                                         Kategori
                                     </TableHead>
-                                    <TableHead className="py-3 text-right">
+                                    <TableHead className="py-4 text-right text-[11px] font-black tracking-widest text-muted-foreground uppercase">
                                         Nilai Perolehan
                                     </TableHead>
-                                    <TableHead className="py-3 text-right">
+                                    <TableHead className="px-6 py-4 text-right text-[11px] font-black tracking-widest text-muted-foreground uppercase">
                                         Aksi
                                     </TableHead>
                                 </TableRow>
@@ -287,19 +283,19 @@ export default function AssetIndex({ assets, summary, filters, flash }: any) {
                                             key={a.id}
                                             className="group transition-colors hover:bg-muted/30"
                                         >
-                                            <TableCell className="px-4 py-4">
+                                            <TableCell className="px-6 py-5">
                                                 <div className="flex flex-col gap-1">
-                                                    <div className="text-sm leading-none font-bold">
+                                                    <div className="text-sm font-black tracking-tight uppercase">
                                                         {a.name}
                                                     </div>
-                                                    <div className="mt-1 flex items-center gap-3">
-                                                        <span className="flex items-center gap-1 text-[10px] font-medium tracking-tight text-muted-foreground uppercase">
+                                                    <div className="flex items-center gap-3">
+                                                        <span className="flex items-center gap-1 text-[10px] font-bold text-muted-foreground uppercase opacity-60">
                                                             <Calendar className="h-3 w-3" />{' '}
                                                             {a.purchased_at ||
-                                                                'Tgl Tidak Tercatat'}
+                                                                'N/A'}
                                                         </span>
                                                         {a.note && (
-                                                            <span className="max-w-[150px] truncate text-[10px] text-muted-foreground italic">
+                                                            <span className="max-w-[150px] truncate text-[10px] text-muted-foreground italic opacity-70">
                                                                 "{a.note}"
                                                             </span>
                                                         )}
@@ -309,15 +305,15 @@ export default function AssetIndex({ assets, summary, filters, flash }: any) {
                                             <TableCell className="text-center">
                                                 <Badge
                                                     variant="outline"
-                                                    className="h-5 border-primary/20 bg-primary/5 px-2 text-[9px] font-bold tracking-tighter text-primary uppercase"
+                                                    className="h-5 border-primary/20 bg-primary/5 px-2 text-[9px] font-black tracking-tighter text-primary uppercase"
                                                 >
                                                     {a.category || 'General'}
                                                 </Badge>
                                             </TableCell>
-                                            <TableCell className="text-right font-black text-blue-600 dark:text-blue-400">
+                                            <TableCell className="text-right text-base font-black text-blue-600 tabular-nums dark:text-blue-400">
                                                 {formatIDR(Number(a.value))}
                                             </TableCell>
-                                            <TableCell className="px-4 text-right">
+                                            <TableCell className="px-6 text-right">
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger
                                                         asChild
@@ -326,24 +322,32 @@ export default function AssetIndex({ assets, summary, filters, flash }: any) {
                                                             variant="ghost"
                                                             className="h-8 w-8 p-0 opacity-50 group-hover:opacity-100"
                                                         >
-                                                            <MoreHorizontal className="h-4 w-4" />
+                                                            <MoreHorizontal
+                                                                size={16}
+                                                            />
                                                         </Button>
                                                     </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end">
-                                                        <DropdownMenuLabel className="text-[10px] font-black tracking-widest uppercase">
+                                                    <DropdownMenuContent
+                                                        align="end"
+                                                        className="w-40 rounded-xl border-none shadow-xl ring-1 ring-border"
+                                                    >
+                                                        <DropdownMenuLabel className="text-[10px] font-black tracking-widest uppercase opacity-50">
                                                             Opsi Aset
                                                         </DropdownMenuLabel>
                                                         <DropdownMenuItem
                                                             onClick={() =>
                                                                 openEdit(a)
                                                             }
+                                                            className="cursor-pointer text-xs font-bold uppercase"
                                                         >
-                                                            <Edit2 className="mr-2 h-3.5 w-3.5" />{' '}
-                                                            Ubah Detail
+                                                            <Edit2
+                                                                size={14}
+                                                                className="mr-2"
+                                                            />{' '}
+                                                            Ubah Data
                                                         </DropdownMenuItem>
                                                         <DropdownMenuSeparator />
                                                         <DropdownMenuItem
-                                                            className="text-red-600"
                                                             onClick={() => {
                                                                 setSelectedAsset(
                                                                     a,
@@ -352,8 +356,12 @@ export default function AssetIndex({ assets, summary, filters, flash }: any) {
                                                                     true,
                                                                 );
                                                             }}
+                                                            className="cursor-pointer text-xs font-bold text-red-600 uppercase"
                                                         >
-                                                            <Trash2 className="mr-2 h-3.5 w-3.5" />{' '}
+                                                            <Trash2
+                                                                size={14}
+                                                                className="mr-2"
+                                                            />{' '}
                                                             Hapus Aset
                                                         </DropdownMenuItem>
                                                     </DropdownMenuContent>
@@ -365,15 +373,15 @@ export default function AssetIndex({ assets, summary, filters, flash }: any) {
                                     <TableRow>
                                         <TableCell
                                             colSpan={4}
-                                            className="h-48 text-center text-muted-foreground"
+                                            className="h-48 text-center"
                                         >
                                             <div className="flex flex-col items-center justify-center opacity-30">
                                                 <Inbox
                                                     size={48}
                                                     className="mb-2"
                                                 />
-                                                <p className="text-sm font-bold tracking-widest uppercase">
-                                                    Tidak ada aset ditemukan
+                                                <p className="text-xs font-black tracking-widest text-muted-foreground uppercase">
+                                                    Belum ada aset terdaftar
                                                 </p>
                                             </div>
                                         </TableCell>
@@ -383,166 +391,188 @@ export default function AssetIndex({ assets, summary, filters, flash }: any) {
                         </Table>
                     </CardContent>
                 </Card>
+            </div>
 
-                {/* MODAL: ADD & EDIT */}
-                <Dialog
-                    open={isAddOpen || isEditOpen}
-                    onOpenChange={(v) => {
-                        if (!v) {
-                            setIsAddOpen(false);
-                            setIsEditOpen(false);
-                        }
-                    }}
-                >
-                    <DialogContent className="sm:max-w-[400px]">
-                        <DialogHeader>
-                            <DialogTitle className="flex items-center gap-2 text-xl font-black tracking-tighter uppercase">
-                                <HardDrive className="h-5 w-5 text-primary" />
-                                {isAddOpen
-                                    ? 'Catat Aset Baru'
-                                    : 'Ubah Detail Aset'}
-                            </DialogTitle>
-                            <DialogDescription className="text-xs font-medium tracking-tight uppercase">
-                                Data ini akan menambah estimasi kekayaan bersih
-                                Anda.
-                            </DialogDescription>
-                        </DialogHeader>
+            {/* MODAL: ADD & EDIT */}
+            <Dialog
+                open={isAddOpen || isEditOpen}
+                onOpenChange={(v) => {
+                    if (!v) {
+                        setIsAddOpen(false);
+                        setIsEditOpen(false);
+                    }
+                }}
+            >
+                <DialogContent className="overflow-hidden border-none p-0 shadow-2xl sm:max-w-[450px]">
+                    <DialogHeader className="bg-slate-950 p-8 text-white">
+                        <DialogTitle className="flex items-center gap-2 text-2xl font-black tracking-tighter uppercase">
+                            <HardDrive size={24} className="text-primary" />{' '}
+                            {isAddOpen ? 'Catat Aset Baru' : 'Ubah Detail Aset'}
+                        </DialogTitle>
+                        <DialogDescription className="text-xs font-bold tracking-widest text-slate-400 uppercase opacity-80">
+                            Data ini akan menambah estimasi kekayaan bersih
+                            Anda.
+                        </DialogDescription>
+                    </DialogHeader>
 
-                        <form onSubmit={submitForm} className="space-y-4 pt-4">
+                    <form
+                        onSubmit={submitForm}
+                        className="space-y-6 bg-card p-8"
+                    >
+                        <div className="space-y-2">
+                            <Label className="text-[11px] font-black tracking-widest text-muted-foreground uppercase">
+                                Nama Barang / Aset
+                            </Label>
+                            <Input
+                                placeholder="Misal: MacBook Pro M3, Honda Vario"
+                                value={form.data.name}
+                                onChange={(e) =>
+                                    form.setData('name', e.target.value)
+                                }
+                                className="h-11 font-bold"
+                            />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">
-                                    Nama Barang / Aset
+                                <Label className="text-[11px] font-black tracking-widest text-muted-foreground uppercase">
+                                    Kategori
                                 </Label>
-                                <Input
-                                    placeholder="Misal: MacBook Pro M3, Honda Vario"
-                                    value={form.data.name}
-                                    onChange={(e) =>
-                                        form.setData('name', e.target.value)
+                                <Select
+                                    value={form.data.category}
+                                    onValueChange={(v) =>
+                                        form.setData('category', v)
                                     }
-                                />
+                                >
+                                    <SelectTrigger className="h-10 text-xs font-bold uppercase">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem
+                                            value="Elektronik"
+                                            className="text-xs font-bold tracking-tighter uppercase"
+                                        >
+                                            Elektronik
+                                        </SelectItem>
+                                        <SelectItem
+                                            value="Kendaraan"
+                                            className="text-xs font-bold tracking-tighter uppercase"
+                                        >
+                                            Kendaraan
+                                        </SelectItem>
+                                        <SelectItem
+                                            value="Properti"
+                                            className="text-xs font-bold tracking-tighter uppercase"
+                                        >
+                                            Properti
+                                        </SelectItem>
+                                        <SelectItem
+                                            value="Hobi"
+                                            className="text-xs font-bold tracking-tighter uppercase"
+                                        >
+                                            Hobi & Koleksi
+                                        </SelectItem>
+                                        <SelectItem
+                                            value="Lainnya"
+                                            className="text-xs font-bold tracking-tighter uppercase"
+                                        >
+                                            Lainnya
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">
-                                        Kategori
-                                    </Label>
-                                    <Select
-                                        value={form.data.category}
-                                        onValueChange={(v) =>
-                                            form.setData('category', v)
-                                        }
-                                    >
-                                        <SelectTrigger className="font-bold">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="Elektronik">
-                                                Elektronik
-                                            </SelectItem>
-                                            <SelectItem value="Kendaraan">
-                                                Kendaraan
-                                            </SelectItem>
-                                            <SelectItem value="Properti">
-                                                Properti
-                                            </SelectItem>
-                                            <SelectItem value="Hobi">
-                                                Hobi & Koleksi
-                                            </SelectItem>
-                                            <SelectItem value="Lainnya">
-                                                Lainnya
-                                            </SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">
-                                        Nilai/Harga (Rp)
-                                    </Label>
-                                    <Input
-                                        type="number"
-                                        className="font-bold"
-                                        value={form.data.value}
-                                        onChange={(e) =>
-                                            form.setData(
-                                                'value',
-                                                Number(e.target.value),
-                                            )
-                                        }
-                                    />
-                                </div>
-                            </div>
-
                             <div className="space-y-2">
-                                <Label className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">
-                                    Tanggal Perolehan
+                                <Label className="text-[11px] font-black tracking-widest text-muted-foreground uppercase">
+                                    Nilai/Harga (Rp)
                                 </Label>
                                 <Input
-                                    type="date"
-                                    value={form.data.purchased_at}
+                                    type="number"
+                                    className="h-10 border-2 font-black tabular-nums focus-visible:ring-primary"
+                                    value={form.data.value}
                                     onChange={(e) =>
                                         form.setData(
-                                            'purchased_at',
-                                            e.target.value,
+                                            'value',
+                                            Number(e.target.value),
                                         )
                                     }
                                 />
                             </div>
+                        </div>
 
-                            <div className="space-y-2">
-                                <Label className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">
-                                    Catatan Tambahan (SN/Warna/Spek)
-                                </Label>
-                                <Input
-                                    placeholder="Contoh: Warna Space Gray, SN: 12345"
-                                    value={form.data.note}
-                                    onChange={(e) =>
-                                        form.setData('note', e.target.value)
-                                    }
-                                />
-                            </div>
+                        <div className="space-y-2">
+                            <Label className="text-[11px] font-black tracking-widest text-muted-foreground uppercase">
+                                Tanggal Perolehan
+                            </Label>
+                            <Input
+                                type="date"
+                                className="h-11 font-bold"
+                                value={form.data.purchased_at}
+                                onChange={(e) =>
+                                    form.setData('purchased_at', e.target.value)
+                                }
+                            />
+                        </div>
 
-                            <DialogFooter>
-                                <Button
-                                    type="submit"
-                                    disabled={form.processing}
-                                    className="h-11 w-full text-xs font-black tracking-widest uppercase"
-                                >
-                                    {form.processing
-                                        ? 'Memproses...'
-                                        : 'Simpan Inventaris'}
-                                </Button>
-                            </DialogFooter>
-                        </form>
-                    </DialogContent>
-                </Dialog>
+                        <div className="space-y-2">
+                            <Label className="text-[11px] font-black tracking-widest text-muted-foreground uppercase">
+                                Catatan (SN/Warna/Spek)
+                            </Label>
+                            <Input
+                                placeholder="Contoh: Space Gray, SN: 12345"
+                                className="h-11"
+                                value={form.data.note}
+                                onChange={(e) =>
+                                    form.setData('note', e.target.value)
+                                }
+                            />
+                        </div>
 
-                {/* ALERT DELETE */}
-                <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
-                    <AlertDialogContent>
-                        <AlertDialogHeader>
-                            <AlertDialogTitle className="font-black tracking-tighter uppercase">
-                                Hapus dari inventaris?
-                            </AlertDialogTitle>
-                            <AlertDialogDescription className="text-sm">
-                                Data aset ini akan dihapus permanen dari daftar
-                                kekayaan Anda.
-                            </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                            <AlertDialogCancel className="text-xs font-bold tracking-widest uppercase">
-                                Batal
-                            </AlertDialogCancel>
-                            <AlertDialogAction
-                                onClick={confirmDelete}
-                                className="bg-red-600 text-xs font-bold tracking-widest uppercase hover:bg-red-700"
+                        <DialogFooter className="pt-2">
+                            <Button
+                                type="submit"
+                                disabled={form.processing}
+                                className="h-12 w-full text-xs font-black tracking-[0.2em] uppercase shadow-lg shadow-primary/20 transition-transform hover:scale-[1.02]"
                             >
-                                Ya, Hapus
-                            </AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
-            </div>
+                                {form.processing
+                                    ? 'Memproses...'
+                                    : 'Simpan Inventaris'}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+
+            {/* ALERT DELETE */}
+            <AlertDialog
+                open={isDeleteOpen}
+                onOpenChange={(v) => {
+                    if (!v) setIsDeleteOpen(false);
+                }}
+            >
+                <AlertDialogContent className="rounded-2xl border-none shadow-2xl">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="text-xl font-black tracking-tight uppercase">
+                            Hapus dari inventaris?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="text-sm leading-relaxed font-medium italic opacity-70">
+                            Data aset ini akan dihapus permanen. Hal ini akan
+                            mengurangi estimasi total kekayaan bersih Anda di
+                            Dashboard.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="mt-4">
+                        <AlertDialogCancel className="h-10 px-6 text-[10px] font-bold tracking-widest uppercase">
+                            Batal
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={confirmDelete}
+                            className="h-10 bg-red-600 px-6 text-[10px] font-bold tracking-widest uppercase hover:bg-red-700"
+                        >
+                            Ya, Hapus
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </AppLayout>
     );
 }

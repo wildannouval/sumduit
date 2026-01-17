@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Number; // Tambahkan ini
+use Illuminate\Support\Number;
 
 class ReportController extends Controller
 {
@@ -22,7 +22,7 @@ class ReportController extends Controller
         $yearQuery = $request->query('year', now()->format('Y'));
         $monthFull = $yearQuery . '-' . str_pad($monthQuery, 2, '0', STR_PAD_LEFT);
 
-        // 1. Kalkulasi Utama
+        // 1. Kalkulasi Utama (Bulan Terpilih)
         $income = (float) Transaction::where('user_id', $userId)
             ->where('type', 'income')
             ->whereRaw("DATE_FORMAT(occurred_at, '%Y-%m') = ?", [$monthFull])
@@ -33,7 +33,7 @@ class ReportController extends Controller
             ->whereRaw("DATE_FORMAT(occurred_at, '%Y-%m') = ?", [$monthFull])
             ->sum('amount');
 
-        // 2. Data Grafik Harian (Daily Cashflow)
+        // 2. Data Grafik Harian
         $dailyData = Transaction::query()
             ->where('user_id', $userId)
             ->whereRaw("DATE_FORMAT(occurred_at, '%Y-%m') = ?", [$monthFull])
@@ -46,7 +46,7 @@ class ReportController extends Controller
             ->orderBy('day')
             ->get();
 
-        // 3. Kategori Terboros (Top 5)
+        // 3. Top Categories
         $topCategories = Transaction::query()
             ->where('user_id', $userId)
             ->where('type', 'expense')
@@ -54,14 +54,15 @@ class ReportController extends Controller
             ->select('category_id', DB::raw('SUM(amount) as total'))
             ->groupBy('category_id')
             ->orderByDesc('total')
+            ->with('category:id,name')
             ->take(5)
             ->get()
             ->map(fn($item) => [
-                'name' => Category::find($item->category_id)->name ?? 'Lainnya',
+                'name' => $item->category->name ?? 'Lainnya',
                 'amount' => (float) $item->total
             ]);
 
-        // 4. Skor Kesehatan & Keamanan (Runway)
+        // 4. Perhitungan Runway (Berdasarkan rata-rata 3 bulan terakhir)
         $emergencyBalance = (float) Wallet::where('user_id', $userId)->where('type', 'emergency')->sum('balance');
         $avgExpense = (float) Transaction::where('user_id', $userId)
             ->where('type', 'expense')
@@ -69,24 +70,20 @@ class ReportController extends Controller
             ->sum('amount') / 3;
 
         $runwayMonths = $avgExpense > 0 ? ($emergencyBalance / $avgExpense) : 0;
-        $savingsRate = $income > 0 ? ($income - $expense) / $income : 0;
+        $savingsRate = $income > 0 ? (($income - $expense) / $income) * 100 : 0;
 
-        // 5. Wawasan Otomatis (Insights)
+        // 5. Wawasan Otomatis
         $insights = [];
         if ($income < $expense) {
-            // Gunakan Number::currency sebagai pengganti formatIDR di PHP
             $deficit = Number::currency($expense - $income, 'IDR', 'id');
             $insights[] = ['title' => 'Defisit Arus Kas', 'body' => "Pengeluaran Anda $deficit lebih tinggi dari pemasukan.", 'level' => 'bad'];
         }
-
         if ($runwayMonths < 3) {
-            $insights[] = ['title' => 'Dana Darurat Tipis', 'body' => 'Simpanan Anda hanya cukup untuk < 3 bulan ke depan.', 'level' => 'warn'];
+            $insights[] = ['title' => 'Dana Darurat Tipis', 'body' => 'Simpanan Anda hanya cukup untuk kurang dari 3 bulan.', 'level' => 'warn'];
         }
-
-        if ($savingsRate > 0.2) {
+        if ($savingsRate > 20) {
             $insights[] = ['title' => 'Penabung Hebat', 'body' => 'Anda berhasil menyisihkan lebih dari 20% pemasukan.', 'level' => 'good'];
         }
-
         if (empty($insights)) {
             $insights[] = ['title' => 'Kondisi Stabil', 'body' => 'Arus kas Anda terpantau aman dan terkendali.', 'level' => 'good'];
         }
@@ -97,8 +94,8 @@ class ReportController extends Controller
                 'income' => $income,
                 'expense' => $expense,
                 'net' => $income - $expense,
-                'runway_months' => (float) $runwayMonths,
-                'savings_rate' => round($savingsRate * 100),
+                'runway_months' => round($runwayMonths, 1),
+                'savings_rate' => round($savingsRate),
             ],
             'dailyData' => $dailyData,
             'topCategories' => $topCategories,
@@ -106,7 +103,8 @@ class ReportController extends Controller
             'transactions' => Transaction::where('user_id', $userId)
                 ->whereRaw("DATE_FORMAT(occurred_at, '%Y-%m') = ?", [$monthFull])
                 ->with(['category', 'wallet'])
-                ->orderByDesc('occurred_at')->get(),
+                ->orderByDesc('occurred_at')
+                ->get(),
         ]);
     }
 }

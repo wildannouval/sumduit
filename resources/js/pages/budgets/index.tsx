@@ -26,13 +26,21 @@ import {
 import {
     Dialog,
     DialogContent,
-    DialogDescription,
     DialogFooter,
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Progress } from '@/components/ui/progress';
 import {
     Select,
     SelectContent,
@@ -57,20 +65,25 @@ import {
     CheckCircle2,
     Edit2,
     Inbox,
-    PieChart,
+    MoreHorizontal,
     PlusCircle,
     Search,
     Target,
     Trash2,
-    TrendingDown,
 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
-import { Bar, BarChart, CartesianGrid, XAxis } from 'recharts';
+import {
+    Bar,
+    BarChart,
+    CartesianGrid,
+    ResponsiveContainer,
+    XAxis,
+} from 'recharts';
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Anggaran', href: '/budgets' }];
 
 const chartConfig = {
-    amount: { label: 'Limit', color: 'hsl(var(--primary))' },
+    amount: { label: 'Limit', color: '#6366f1' },
     spent: { label: 'Terpakai', color: '#ef4444' },
 } satisfies ChartConfig;
 
@@ -115,7 +128,6 @@ export default function BudgetIndex({
         e.preventDefault();
         const url = isAddOpen ? '/budgets' : `/budgets/${selectedBudget.id}`;
         const method = isAddOpen ? 'post' : 'put';
-
         router[method](url, form.data as any, {
             onSuccess: () => {
                 setIsAddOpen(false);
@@ -144,98 +156,94 @@ export default function BudgetIndex({
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Anggaran Bulanan" />
 
-            <div className="flex flex-col gap-6 p-6">
+            <div className="flex flex-col gap-6 p-6 font-sans">
                 {/* 1. Notifications */}
                 {flash.success && (
-                    <Alert className="border-emerald-200 bg-emerald-50 text-emerald-900">
+                    <Alert className="border-emerald-200 bg-emerald-50 text-emerald-900 dark:bg-emerald-950/20">
                         <CheckCircle2 className="h-4 w-4 stroke-emerald-600" />
-                        <AlertTitle className="font-bold tracking-tight">
+                        <AlertTitle className="text-xs font-black tracking-widest uppercase">
                             Berhasil
                         </AlertTitle>
-                        <AlertDescription>{flash.success}</AlertDescription>
+                        <AlertDescription className="text-xs font-medium">
+                            {flash.success}
+                        </AlertDescription>
                     </Alert>
                 )}
 
-                {/* 2. Page Header */}
+                {/* 2. Header */}
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <h1 className="flex items-center gap-2 text-2xl font-black tracking-tight uppercase">
-                            <Target className="h-6 w-6 text-primary" />{' '}
-                            Manajemen Budget
+                        <h1 className="flex items-center gap-3 text-3xl font-black tracking-tighter uppercase">
+                            <Target className="h-8 w-8 text-primary" /> Anggaran
                         </h1>
-                        <p className="text-xs tracking-widest text-muted-foreground uppercase">
-                            Kontrol pengeluaran bulanan Anda.
+                        <p className="mt-1 text-xs font-bold tracking-[0.2em] text-muted-foreground uppercase">
+                            Kendali pengeluaran bulanan Anda.
                         </p>
                     </div>
                     <Button
                         onClick={() => setIsAddOpen(true)}
-                        className="text-xs font-bold tracking-widest uppercase shadow-lg"
+                        className="h-10 px-6 text-xs font-black tracking-widest uppercase shadow-lg transition-transform hover:scale-105"
                     >
                         <PlusCircle className="mr-2 h-4 w-4" /> Alokasi Baru
                     </Button>
                 </div>
 
-                {/* 3. Summary Section */}
+                {/* 3. Summary Cards */}
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-                    <CardSummary
-                        title="Total Budget"
+                    <CardStat
+                        label="Total Budget"
                         value={summary.total_budget}
-                        icon={<Target className="h-4 w-4" />}
+                        color="text-foreground"
                     />
-                    <CardSummary
-                        title="Total Terpakai"
+                    <CardStat
+                        label="Total Terpakai"
                         value={summary.total_spent}
                         color="text-red-600"
-                        icon={<TrendingDown className="h-4 w-4" />}
                     />
-                    <CardSummary
-                        title="Total Sisa"
+                    <CardStat
+                        label="Total Sisa"
                         value={summary.total_remaining}
                         color="text-emerald-600"
-                        icon={<PieChart className="h-4 w-4" />}
                     />
-                    <Card className="border-none bg-slate-950 text-white shadow-xl dark:bg-slate-900">
-                        <CardHeader className="p-4 pb-2">
+
+                    <Card className="relative overflow-hidden border-none bg-slate-950 text-white shadow-xl ring-1 ring-border dark:bg-slate-900">
+                        <CardHeader className="p-4 pb-0 text-center">
                             <CardDescription className="text-[10px] font-black tracking-widest text-slate-400 uppercase">
-                                Utilitas Budget
+                                Utilitas Global
                             </CardDescription>
                         </CardHeader>
-                        <CardContent className="p-4 pt-0">
-                            <div className="text-3xl font-black">
+                        <CardContent className="flex flex-col items-center p-4 pt-1">
+                            <div className="text-3xl font-black tabular-nums">
                                 {Math.round(summary.utilization_pct)}%
                             </div>
-                            <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
-                                <div
-                                    className={`h-full transition-all ${summary.utilization_pct > 90 ? 'bg-red-500' : 'bg-primary'}`}
-                                    style={{
-                                        width: `${Math.min(summary.utilization_pct, 100)}%`,
-                                    }}
-                                />
-                            </div>
+                            <Progress
+                                value={summary.utilization_pct}
+                                className="mt-2 h-1.5 w-full bg-slate-800"
+                                indicatorClassName={
+                                    summary.utilization_pct > 90
+                                        ? 'bg-red-500'
+                                        : 'bg-primary'
+                                }
+                            />
                         </CardContent>
                     </Card>
                 </div>
 
-                {/* 4. Visualization & Filters */}
+                {/* 4. Analysis & Controls */}
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
                     <Card className="overflow-hidden border-none shadow-sm ring-1 ring-border lg:col-span-2">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 border-b bg-muted/20">
-                            <div className="space-y-1">
-                                <CardTitle className="flex items-center gap-2 text-sm font-black tracking-tighter uppercase">
-                                    <BarChart3 className="h-4 w-4 text-primary" />{' '}
-                                    Overview Budget vs Realisasi
-                                </CardTitle>
-                            </div>
-                            <div className="flex gap-2">
-                                <Input
-                                    type="month"
-                                    value={filters.month}
-                                    onChange={(e) =>
-                                        applyFilters({ month: e.target.value })
-                                    }
-                                    className="h-8 w-[140px] bg-background text-xs font-bold uppercase"
-                                />
-                            </div>
+                        <CardHeader className="flex flex-row items-center justify-between border-b bg-muted/20 pb-4">
+                            <CardTitle className="text-sm font-black tracking-tighter uppercase">
+                                Visualisasi Budget vs Realisasi
+                            </CardTitle>
+                            <Input
+                                type="month"
+                                className="h-8 w-40 bg-background text-xs font-bold"
+                                value={filters.month}
+                                onChange={(e) =>
+                                    applyFilters({ month: e.target.value })
+                                }
+                            />
                         </CardHeader>
                         <CardContent className="pt-6">
                             {budgets.length > 0 ? (
@@ -243,97 +251,113 @@ export default function BudgetIndex({
                                     config={chartConfig}
                                     className="h-[200px] w-full"
                                 >
-                                    <BarChart data={budgets}>
-                                        <CartesianGrid
-                                            vertical={false}
-                                            strokeDasharray="3 3"
-                                            opacity={0.3}
-                                        />
-                                        <XAxis
-                                            dataKey="category.name"
-                                            tickLine={false}
-                                            tickMargin={10}
-                                            axisLine={false}
-                                            tickFormatter={(value) =>
-                                                value.slice(0, 6)
-                                            }
-                                            fontSize={10}
-                                            fontWeight="bold"
-                                        />
-                                        <ChartTooltip
-                                            content={<ChartTooltipContent />}
-                                        />
-                                        <Bar
-                                            dataKey="amount"
-                                            fill="var(--color-amount)"
-                                            radius={[4, 4, 0, 0]}
-                                        />
-                                        <Bar
-                                            dataKey="spent"
-                                            fill="var(--color-spent)"
-                                            radius={[4, 4, 0, 0]}
-                                        />
-                                    </BarChart>
+                                    <ResponsiveContainer
+                                        width="100%"
+                                        height="100%"
+                                    >
+                                        <BarChart data={budgets}>
+                                            <CartesianGrid
+                                                vertical={false}
+                                                strokeDasharray="3 3"
+                                                opacity={0.2}
+                                            />
+                                            <XAxis
+                                                dataKey="category.name"
+                                                axisLine={false}
+                                                tickLine={false}
+                                                fontSize={10}
+                                                fontWeight="bold"
+                                                className="uppercase"
+                                                tickFormatter={(v) =>
+                                                    v.length > 8
+                                                        ? `${v.substring(0, 6)}..`
+                                                        : v
+                                                }
+                                            />
+                                            <ChartTooltip
+                                                content={
+                                                    <ChartTooltipContent />
+                                                }
+                                            />
+                                            <Bar
+                                                dataKey="amount"
+                                                fill="var(--color-amount)"
+                                                radius={[4, 4, 0, 0]}
+                                                barSize={30}
+                                            />
+                                            <Bar
+                                                dataKey="spent"
+                                                fill="var(--color-spent)"
+                                                radius={[4, 4, 0, 0]}
+                                                barSize={30}
+                                            />
+                                        </BarChart>
+                                    </ResponsiveContainer>
                                 </ChartContainer>
                             ) : (
                                 <EmptyState
-                                    title="Belum ada data visual"
-                                    description="Tambahkan anggaran untuk melihat grafik perbandingan."
+                                    title="Visual Kosong"
+                                    description="Belum ada data untuk periode ini."
                                 />
                             )}
                         </CardContent>
                     </Card>
 
                     <Card className="border-none shadow-sm ring-1 ring-border">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-sm font-black tracking-tighter uppercase">
-                                <Search className="h-4 w-4 text-primary" />{' '}
-                                Filter Kategori
+                        <CardHeader className="pb-4">
+                            <CardTitle className="text-sm font-black tracking-tighter uppercase">
+                                Pencarian
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="space-y-2">
-                                <Label className="text-[10px] font-bold text-muted-foreground uppercase">
-                                    Cari Nama Kategori
+                                <Label className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">
+                                    Nama Kategori
                                 </Label>
-                                <Input
-                                    placeholder="Contoh: Makan, Internet..."
-                                    value={filters.search}
-                                    onChange={(e) =>
-                                        applyFilters({ search: e.target.value })
-                                    }
-                                    className="bg-muted/30"
-                                />
+                                <div className="relative">
+                                    <Search className="absolute top-2.5 left-3 h-4 w-4 text-muted-foreground opacity-50" />
+                                    <Input
+                                        placeholder="Cari..."
+                                        className="h-10 pl-9 text-sm font-medium"
+                                        value={filters.search}
+                                        onChange={(e) =>
+                                            applyFilters({
+                                                search: e.target.value,
+                                            })
+                                        }
+                                    />
+                                </div>
                             </div>
-                            <div className="rounded-lg border border-blue-100 bg-blue-50/50 p-3 dark:border-blue-900/30 dark:bg-blue-900/10">
-                                <p className="text-[10px] leading-relaxed font-bold text-blue-600 uppercase">
-                                    Tips: Gunakan periode bulan untuk melihat
-                                    histori anggaran bulan-bulan sebelumnya.
+                            <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-4 dark:border-blue-900/20 dark:bg-blue-900/10">
+                                <p className="text-[10px] leading-relaxed font-bold text-blue-600 uppercase dark:text-blue-400">
+                                    Tips: Evaluasi anggaran setiap bulan untuk
+                                    menyesuaikan gaya hidup dan target tabungan
+                                    Anda.
                                 </p>
                             </div>
                         </CardContent>
                     </Card>
                 </div>
 
-                {/* 5. Budget Table */}
+                {/* 5. Data Table */}
                 <Card className="overflow-hidden border-none shadow-sm ring-1 ring-border">
                     <CardContent className="p-0">
                         <Table>
-                            <TableHeader className="bg-muted/50">
+                            <TableHeader className="border-b bg-muted/50">
                                 <TableRow>
-                                    <TableHead className="py-3 text-[10px] font-black tracking-widest uppercase">
+                                    <TableHead className="h-12 py-4 text-[11px] font-black tracking-widest text-muted-foreground uppercase">
                                         Kategori & Group
                                     </TableHead>
-                                    <TableHead className="py-3 text-right text-[10px] font-black tracking-widest uppercase">
+                                    <TableHead className="h-12 py-4 text-right text-[11px] font-black tracking-widest text-muted-foreground uppercase">
                                         Limit
                                     </TableHead>
-                                    <TableHead className="py-3 text-right text-[10px] font-black tracking-widest uppercase">
-                                        Terpakai
+                                    <TableHead className="h-12 py-4 text-center text-[11px] font-black tracking-widest text-muted-foreground uppercase">
+                                        Pemakaian
                                     </TableHead>
-                                    <TableHead className="py-3 text-right text-[10px] font-black tracking-widest uppercase">
+                                    <TableHead className="h-12 py-4 text-right text-[11px] font-black tracking-widest text-muted-foreground uppercase">
                                         Sisa
                                     </TableHead>
-                                    <TableHead className="py-3 text-right text-[10px] font-black tracking-widest uppercase">
+                                    <TableHead className="h-12 py-4 text-right text-[11px] font-black tracking-widest text-muted-foreground uppercase">
                                         Aksi
                                     </TableHead>
                                 </TableRow>
@@ -350,82 +374,130 @@ export default function BudgetIndex({
                                                 key={b.id}
                                                 className="group transition-colors hover:bg-muted/30"
                                             >
-                                                <TableCell>
-                                                    <div className="text-sm leading-none font-bold">
-                                                        {b.category?.name}
-                                                    </div>
-                                                    <div className="mt-1 text-[9px] font-bold tracking-tighter text-muted-foreground uppercase">
-                                                        Group: {b.group}
+                                                <TableCell className="py-5">
+                                                    <div className="flex flex-col gap-1">
+                                                        <span className="text-sm font-black tracking-tight uppercase">
+                                                            {b.category?.name}
+                                                        </span>
+                                                        <span className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase opacity-60">
+                                                            Group: {b.group}
+                                                        </span>
                                                     </div>
                                                 </TableCell>
-                                                <TableCell className="text-right font-bold">
+                                                <TableCell className="text-right font-black tabular-nums">
                                                     {formatIDR(
                                                         Number(b.amount),
                                                     )}
                                                 </TableCell>
-                                                <TableCell className="text-right">
-                                                    <div className="flex flex-col items-end gap-1">
-                                                        <span
-                                                            className={`text-xs font-black ${usage > 90 ? 'text-red-600' : 'text-foreground'}`}
-                                                        >
-                                                            {formatIDR(b.spent)}{' '}
-                                                            ({Math.round(usage)}
-                                                            %)
-                                                        </span>
-                                                        <div className="h-1 w-24 overflow-hidden rounded-full bg-muted">
-                                                            <div
-                                                                className={`h-full ${usage > 100 ? 'bg-red-600' : usage > 80 ? 'bg-orange-500' : 'bg-blue-500'}`}
-                                                                style={{
-                                                                    width: `${Math.min(usage, 100)}%`,
-                                                                }}
-                                                            />
+                                                <TableCell className="min-w-[150px]">
+                                                    <div className="flex flex-col items-center gap-1.5">
+                                                        <div className="flex w-full justify-between px-1 text-[10px] font-black tracking-tighter uppercase">
+                                                            <span
+                                                                className={
+                                                                    usage > 90
+                                                                        ? 'text-red-600'
+                                                                        : 'text-muted-foreground'
+                                                                }
+                                                            >
+                                                                {formatIDR(
+                                                                    b.spent,
+                                                                )}
+                                                            </span>
+                                                            <span
+                                                                className={
+                                                                    usage > 90
+                                                                        ? 'text-red-600'
+                                                                        : ''
+                                                                }
+                                                            >
+                                                                {Math.round(
+                                                                    usage,
+                                                                )}
+                                                                %
+                                                            </span>
                                                         </div>
+                                                        <Progress
+                                                            value={usage}
+                                                            className="h-1.5 w-full"
+                                                            indicatorClassName={
+                                                                usage > 100
+                                                                    ? 'bg-red-600'
+                                                                    : usage > 80
+                                                                      ? 'bg-orange-500'
+                                                                      : 'bg-blue-500'
+                                                            }
+                                                        />
                                                     </div>
                                                 </TableCell>
                                                 <TableCell
-                                                    className={`text-right font-black ${b.remaining < 0 ? 'text-red-600' : 'text-emerald-600'}`}
+                                                    className={`text-right font-black tabular-nums ${b.remaining < 0 ? 'text-red-600' : 'text-emerald-600'}`}
                                                 >
                                                     {formatIDR(b.remaining)}
                                                 </TableCell>
                                                 <TableCell className="text-right">
-                                                    <div className="flex justify-end gap-1 opacity-60 transition-opacity group-hover:opacity-100">
-                                                        <Button
-                                                            size="icon"
-                                                            variant="ghost"
-                                                            className="h-8 w-8"
-                                                            onClick={() =>
-                                                                openEdit(b)
-                                                            }
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger
+                                                            asChild
                                                         >
-                                                            <Edit2 className="h-3.5 w-3.5" />
-                                                        </Button>
-                                                        <Button
-                                                            size="icon"
-                                                            variant="ghost"
-                                                            className="h-8 w-8 text-red-500 hover:text-red-600"
-                                                            onClick={() => {
-                                                                setSelectedBudget(
-                                                                    b,
-                                                                );
-                                                                setIsDeleteOpen(
-                                                                    true,
-                                                                );
-                                                            }}
+                                                            <Button
+                                                                variant="ghost"
+                                                                className="h-8 w-8 p-0 opacity-50 group-hover:opacity-100"
+                                                            >
+                                                                <MoreHorizontal
+                                                                    size={16}
+                                                                />
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent
+                                                            align="end"
+                                                            className="w-40 rounded-xl border-none shadow-xl ring-1 ring-border"
                                                         >
-                                                            <Trash2 className="h-3.5 w-3.5" />
-                                                        </Button>
-                                                    </div>
+                                                            <DropdownMenuLabel className="text-[10px] font-black uppercase opacity-50">
+                                                                Manajemen
+                                                            </DropdownMenuLabel>
+                                                            <DropdownMenuItem
+                                                                onClick={() =>
+                                                                    openEdit(b)
+                                                                }
+                                                                className="cursor-pointer text-xs font-bold uppercase"
+                                                            >
+                                                                <Edit2
+                                                                    size={14}
+                                                                    className="mr-2"
+                                                                />{' '}
+                                                                Ubah Limit
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuSeparator />
+                                                            <DropdownMenuItem
+                                                                onClick={() => {
+                                                                    setSelectedBudget(
+                                                                        b,
+                                                                    );
+                                                                    setIsDeleteOpen(
+                                                                        true,
+                                                                    );
+                                                                }}
+                                                                className="cursor-pointer text-xs font-bold text-red-600 uppercase"
+                                                            >
+                                                                <Trash2
+                                                                    size={14}
+                                                                    className="mr-2"
+                                                                />{' '}
+                                                                Hapus
+                                                            </DropdownMenuItem>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
                                                 </TableCell>
                                             </TableRow>
                                         );
                                     })
                                 ) : (
                                     <TableRow>
-                                        <TableCell colSpan={5}>
-                                            <EmptyState
-                                                title="Belum ada anggaran"
-                                                description="Mulai alokasikan dana Anda untuk periode bulan ini."
-                                            />
+                                        <TableCell
+                                            colSpan={5}
+                                            className="h-32 text-center font-medium text-muted-foreground italic"
+                                        >
+                                            Data anggaran periode ini kosong.
                                         </TableCell>
                                     </TableRow>
                                 )}
@@ -435,7 +507,7 @@ export default function BudgetIndex({
                 </Card>
             </div>
 
-            {/* --- MODALS --- */}
+            {/* --- MODAL: ADD & EDIT --- */}
             <Dialog
                 open={isAddOpen || isEditOpen}
                 onOpenChange={(v) => {
@@ -445,24 +517,20 @@ export default function BudgetIndex({
                     }
                 }}
             >
-                <DialogContent className="sm:max-w-[400px]">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2 text-xl font-black tracking-tighter uppercase">
-                            {isAddOpen ? (
-                                <PlusCircle className="h-5 w-5 text-primary" />
-                            ) : (
-                                <Edit2 className="h-5 w-5 text-primary" />
-                            )}
-                            {isAddOpen ? 'Alokasi Budget' : 'Ubah Budget'}
+                <DialogContent className="overflow-hidden border-none p-0 shadow-2xl sm:max-w-[400px]">
+                    <DialogHeader className="bg-slate-950 p-6 text-white">
+                        <DialogTitle className="flex items-center gap-2 text-xl font-black tracking-tighter text-primary uppercase">
+                            <BarChart3 size={24} />{' '}
+                            {isAddOpen ? 'Alokasi Budget' : 'Ubah Batasan'}
                         </DialogTitle>
-                        <DialogDescription className="text-xs font-medium tracking-tight uppercase">
-                            Atur limit belanja bulanan per kategori.
-                        </DialogDescription>
                     </DialogHeader>
 
-                    <form onSubmit={submitForm} className="space-y-4 pt-4">
+                    <form
+                        onSubmit={submitForm}
+                        className="space-y-6 bg-card p-6"
+                    >
                         <div className="space-y-2">
-                            <Label className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">
+                            <Label className="text-[11px] font-black tracking-widest text-muted-foreground uppercase">
                                 Kategori Pengeluaran
                             </Label>
                             <Select
@@ -471,7 +539,7 @@ export default function BudgetIndex({
                                     form.setData('category_id', Number(v))
                                 }
                             >
-                                <SelectTrigger className="font-bold">
+                                <SelectTrigger className="h-10 text-xs font-bold uppercase">
                                     <SelectValue placeholder="Pilih Kategori" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -479,6 +547,7 @@ export default function BudgetIndex({
                                         <SelectItem
                                             key={c.id}
                                             value={String(c.id)}
+                                            className="text-xs font-bold uppercase"
                                         >
                                             {c.name} ({c.group})
                                         </SelectItem>
@@ -489,11 +558,12 @@ export default function BudgetIndex({
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">
-                                    Periode
+                                <Label className="text-[11px] font-black tracking-widest text-muted-foreground uppercase">
+                                    Periode Bulan
                                 </Label>
                                 <Input
                                     type="month"
+                                    className="h-10 font-bold"
                                     value={form.data.month}
                                     onChange={(e) =>
                                         form.setData('month', e.target.value)
@@ -501,12 +571,12 @@ export default function BudgetIndex({
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">
+                                <Label className="text-[11px] font-black tracking-widest text-muted-foreground uppercase">
                                     Nominal Limit
                                 </Label>
                                 <Input
                                     type="number"
-                                    className="font-bold"
+                                    className="h-10 border-2 font-black tabular-nums focus-visible:ring-primary"
                                     value={form.data.amount}
                                     onChange={(e) =>
                                         form.setData(
@@ -519,11 +589,12 @@ export default function BudgetIndex({
                         </div>
 
                         <div className="space-y-2">
-                            <Label className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">
-                                Catatan Tambahan
+                            <Label className="text-[11px] font-black tracking-widest text-muted-foreground uppercase">
+                                Catatan (Opsional)
                             </Label>
                             <Input
-                                placeholder="Misal: Kurangi jajan kopi"
+                                placeholder="Misal: Kurangi jajan kopi harian"
+                                className="h-10"
                                 value={form.data.notes}
                                 onChange={(e) =>
                                     form.setData('notes', e.target.value)
@@ -531,37 +602,38 @@ export default function BudgetIndex({
                             />
                         </div>
 
-                        <DialogFooter>
+                        <DialogFooter className="pt-2">
                             <Button
                                 type="submit"
                                 disabled={form.processing}
-                                className="h-11 w-full text-xs font-black tracking-widest uppercase"
+                                className="h-12 w-full text-xs font-black tracking-[0.2em] uppercase shadow-lg transition-transform hover:scale-[1.02]"
                             >
-                                {form.processing
-                                    ? 'Menyimpan...'
-                                    : 'Simpan Anggaran'}
+                                Simpan Anggaran
                             </Button>
                         </DialogFooter>
                     </form>
                 </DialogContent>
             </Dialog>
 
+            {/* --- ALERT DELETE --- */}
             <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
-                <AlertDialogContent>
+                <AlertDialogContent className="rounded-2xl border-none shadow-2xl">
                     <AlertDialogHeader>
-                        <AlertDialogTitle>
-                            Hapus batasan anggaran ini?
+                        <AlertDialogTitle className="text-xl font-black tracking-tight uppercase">
+                            Hapus anggaran?
                         </AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Data anggaran akan dihapus, tetapi riwayat transaksi
-                            kategori ini tetap ada.
+                        <AlertDialogDescription className="text-sm font-medium opacity-70">
+                            Batasan belanja untuk kategori ini akan dihapus.
+                            Riwayat transaksi Anda tidak akan terpengaruh.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Batal</AlertDialogCancel>
+                    <AlertDialogFooter className="mt-4">
+                        <AlertDialogCancel className="h-10 px-6 text-[10px] font-bold tracking-widest uppercase">
+                            Batal
+                        </AlertDialogCancel>
                         <AlertDialogAction
                             onClick={confirmDelete}
-                            className="bg-red-600 text-xs font-bold uppercase hover:bg-red-700"
+                            className="h-10 bg-red-600 px-6 text-[10px] font-bold tracking-widest uppercase hover:bg-red-700"
                         >
                             Ya, Hapus
                         </AlertDialogAction>
@@ -574,17 +646,18 @@ export default function BudgetIndex({
 
 // --- SUB COMPONENTS ---
 
-function CardSummary({ title, value, color = 'text-foreground', icon }: any) {
+function CardStat({ label, value, color = 'text-foreground' }: any) {
     return (
-        <Card className="overflow-hidden border-none bg-card shadow-sm ring-1 ring-border">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-2 text-muted-foreground">
+        <Card className="border-none bg-card shadow-sm ring-1 ring-border">
+            <CardHeader className="p-4 pb-1 text-muted-foreground">
                 <CardDescription className="text-[10px] font-black tracking-widest uppercase">
-                    {title}
+                    {label}
                 </CardDescription>
-                {icon}
             </CardHeader>
             <CardContent className="p-4 pt-0">
-                <div className={`truncate text-xl font-black ${color}`}>
+                <div
+                    className={`truncate text-xl font-black tabular-nums ${color}`}
+                >
                     {formatIDR(value)}
                 </div>
             </CardContent>
@@ -600,14 +673,12 @@ function EmptyState({
     description: string;
 }) {
     return (
-        <div className="flex h-48 flex-col items-center justify-center rounded-xl border border-dashed bg-muted/5 p-8 text-center">
-            <Inbox className="mb-3 h-8 w-8 text-muted-foreground opacity-20" />
-            <h3 className="text-sm font-bold tracking-tight text-foreground uppercase">
+        <div className="flex h-48 flex-col items-center justify-center p-8 text-center opacity-30">
+            <Inbox className="mb-3 h-8 w-8 text-muted-foreground" />
+            <h3 className="text-sm font-black tracking-tight uppercase">
                 {title}
             </h3>
-            <p className="mt-1 max-w-[200px] text-xs text-muted-foreground">
-                {description}
-            </p>
+            <p className="mt-1 text-xs">{description}</p>
         </div>
     );
 }

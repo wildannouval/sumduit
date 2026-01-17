@@ -12,7 +12,6 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
     Dialog,
     DialogContent,
@@ -22,7 +21,6 @@ import {
 } from '@/components/ui/dialog';
 import {
     DropdownMenu,
-    DropdownMenuCheckboxItem,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuLabel,
@@ -54,23 +52,17 @@ import { Head, router, useForm } from '@inertiajs/react';
 import {
     ColumnDef,
     ColumnFiltersState,
-    SortingState,
-    VisibilityState,
     flexRender,
     getCoreRowModel,
     getFilteredRowModel,
-    getPaginationRowModel,
-    getSortedRowModel,
     useReactTable,
 } from '@tanstack/react-table';
 import {
-    ArrowDownLeft,
-    ArrowUpRight,
+    ArrowRightLeft,
     CheckCircle2,
-    ChevronDown,
-    Columns2,
     Edit2,
-    History, // Ganti LayoutColumns menjadi Columns2
+    History,
+    Inbox,
     MoreHorizontal,
     PlusCircle,
     Search,
@@ -95,20 +87,15 @@ export default function TransactionIndex({
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
     const [selectedTx, setSelectedTx] = useState<any>(null);
-
-    const [sorting, setSorting] = useState<SortingState>([]);
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-    const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(
-        {},
-    );
-    const [rowSelection, setRowSelection] = useState({});
 
     const form = useForm({
-        type: 'expense' as 'income' | 'expense',
+        type: 'expense' as 'income' | 'expense' | 'transfer',
         amount: 0,
-        wallet_id: (wallets[0]?.id || null) as number | null,
-        category_id: null as number | null,
-        goal_id: null as number | null,
+        wallet_id: (wallets[0]?.id || '') as string | number,
+        to_wallet_id: '' as string | number,
+        category_id: '' as string | number | null,
+        goal_id: '' as string | number | null,
         occurred_at: new Date().toISOString().split('T')[0],
         note: '',
     });
@@ -126,8 +113,9 @@ export default function TransactionIndex({
             type: tx.type,
             amount: Number(tx.amount),
             wallet_id: tx.wallet_id,
-            category_id: tx.category_id,
-            goal_id: tx.goal_id,
+            to_wallet_id: '',
+            category_id: tx.category_id || '',
+            goal_id: tx.goal_id || '',
             occurred_at: tx.occurred_at,
             note: tx.note || '',
         });
@@ -136,10 +124,14 @@ export default function TransactionIndex({
 
     const submitForm = (e: React.FormEvent) => {
         e.preventDefault();
-        const url = isAddOpen
-            ? '/transactions'
-            : `/transactions/${selectedTx.id}`;
-        const method = isAddOpen ? 'post' : 'put';
+        const url =
+            form.data.type === 'transfer'
+                ? '/wallets/transfer'
+                : isAddOpen
+                  ? '/transactions'
+                  : `/transactions/${selectedTx.id}`;
+        const method =
+            isAddOpen || form.data.type === 'transfer' ? 'post' : 'put';
 
         router[method](url, form.data as any, {
             onSuccess: () => {
@@ -159,47 +151,28 @@ export default function TransactionIndex({
 
     const columns: ColumnDef<any>[] = [
         {
-            id: 'select',
-            header: ({ table }) => (
-                <Checkbox
-                    checked={
-                        table.getIsAllPageRowsSelected() ||
-                        (table.getIsSomePageRowsSelected() && 'indeterminate')
-                    }
-                    onCheckedChange={(value) =>
-                        table.toggleAllPageRowsSelected(!!value)
-                    }
-                    aria-label="Select all"
-                />
-            ),
-            cell: ({ row }) => (
-                <Checkbox
-                    checked={row.getIsSelected()}
-                    onCheckedChange={(value) => row.toggleSelected(!!value)}
-                    aria-label="Select row"
-                />
-            ),
-            enableSorting: false,
-            enableHiding: false,
+            accessorKey: 'type', // Kolom hidden untuk filter Tabs
+            header: '',
+            enableHiding: true,
         },
         {
             accessorKey: 'occurred_at',
             header: 'Tanggal',
             cell: ({ row }) => (
-                <div className="text-xs font-medium text-muted-foreground">
+                <div className="text-sm font-bold tracking-tight text-muted-foreground">
                     {row.getValue('occurred_at')}
                 </div>
             ),
         },
         {
             accessorKey: 'category',
-            header: 'Kategori & Dompet',
+            header: 'Keterangan',
             cell: ({ row }) => {
                 const tx = row.original;
                 return (
                     <div className="flex flex-col gap-1">
                         <div className="flex items-center gap-2">
-                            <span className="text-sm font-bold">
+                            <span className="text-sm font-black tracking-tight uppercase">
                                 {tx.category?.name || 'Lainnya'}
                             </span>
                             <Badge
@@ -208,17 +181,20 @@ export default function TransactionIndex({
                                         ? 'outline'
                                         : 'destructive'
                                 }
-                                className={
-                                    tx.type === 'income'
-                                        ? 'border-emerald-500 bg-emerald-50 text-[10px] text-emerald-600'
-                                        : 'text-[10px]'
-                                }
+                                className={`h-4 border-none px-1.5 text-[9px] font-black uppercase ${tx.type === 'income' ? 'bg-emerald-500/20 text-emerald-600' : ''}`}
                             >
                                 {tx.type === 'income' ? 'Masuk' : 'Keluar'}
                             </Badge>
                         </div>
-                        <div className="flex items-center gap-2 text-[10px] tracking-tight text-muted-foreground uppercase">
-                            <WalletIcon className="h-3 w-3" /> {tx.wallet?.name}
+                        <div className="flex items-center gap-3 text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
+                            <span className="flex items-center gap-1">
+                                <WalletIcon size={12} /> {tx.wallet?.name}
+                            </span>
+                            {tx.goal && (
+                                <span className="flex items-center gap-1 text-blue-500">
+                                    <Target size={12} /> {tx.goal.name}
+                                </span>
+                            )}
                         </div>
                     </div>
                 );
@@ -228,310 +204,259 @@ export default function TransactionIndex({
             accessorKey: 'note',
             header: 'Catatan',
             cell: ({ row }) => (
-                <div className="max-w-[200px] truncate text-xs text-muted-foreground italic">
-                    {row.getValue('note') || '-'}
+                <div className="max-w-[200px] truncate text-xs font-medium text-muted-foreground italic">
+                    "{row.getValue('note') || '-'}"
                 </div>
             ),
         },
         {
             accessorKey: 'amount',
             header: () => <div className="text-right">Nominal</div>,
-            cell: ({ row }) => {
-                const tx = row.original;
-                return (
-                    <div
-                        className={`text-right font-black ${tx.type === 'income' ? 'text-emerald-600' : 'text-red-600'}`}
-                    >
-                        {tx.type === 'income' ? '+' : '-'}{' '}
-                        {formatIDR(Number(tx.amount))}
-                    </div>
-                );
-            },
+            cell: ({ row }) => (
+                <div
+                    className={`text-right text-base font-black tabular-nums ${row.original.type === 'income' ? 'text-emerald-600' : 'text-red-600'}`}
+                >
+                    {row.original.type === 'income' ? '+' : '-'}
+                    {formatIDR(row.original.amount)}
+                </div>
+            ),
         },
         {
             id: 'actions',
-            enableHiding: false,
-            cell: ({ row }) => {
-                const tx = row.original;
-                return (
-                    <div className="text-right">
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" className="h-8 w-8 p-0">
-                                    <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Aksi</DropdownMenuLabel>
-                                <DropdownMenuItem onClick={() => openEdit(tx)}>
-                                    <Edit2 className="mr-2 h-3.5 w-3.5" /> Ubah
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                    className="text-red-600"
-                                    onClick={() => {
-                                        setSelectedTx(tx);
-                                        setIsDeleteOpen(true);
-                                    }}
-                                >
-                                    <Trash2 className="mr-2 h-3.5 w-3.5" />{' '}
-                                    Hapus
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                    </div>
-                );
-            },
+            cell: ({ row }) => (
+                <div className="text-right">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button
+                                variant="ghost"
+                                className="h-8 w-8 p-0 opacity-50 hover:opacity-100"
+                            >
+                                <MoreHorizontal size={16} />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                            align="end"
+                            className="w-40 rounded-xl border-none shadow-xl ring-1 ring-border"
+                        >
+                            <DropdownMenuLabel className="text-[10px] font-black uppercase opacity-50">
+                                Opsi
+                            </DropdownMenuLabel>
+                            <DropdownMenuItem
+                                onClick={() => openEdit(row.original)}
+                                className="cursor-pointer text-xs font-bold uppercase"
+                            >
+                                <Edit2 size={14} className="mr-2" /> Ubah
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                                onClick={() => {
+                                    setSelectedTx(row.original);
+                                    setIsDeleteOpen(true);
+                                }}
+                                className="cursor-pointer text-xs font-bold text-red-600 uppercase"
+                            >
+                                <Trash2 size={14} className="mr-2" /> Hapus
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
+            ),
         },
     ];
 
     const table = useReactTable({
         data: transactions.data,
         columns,
-        onSortingChange: setSorting,
+        state: { columnFilters, columnVisibility: { type: false } }, // Sembunyikan kolom type
         onColumnFiltersChange: setColumnFilters,
         getCoreRowModel: getCoreRowModel(),
-        getPaginationRowModel: getPaginationRowModel(),
-        getSortedRowModel: getSortedRowModel(),
         getFilteredRowModel: getFilteredRowModel(),
-        onColumnVisibilityChange: setColumnVisibility,
-        onRowSelectionChange: setRowSelection,
-        state: {
-            sorting,
-            columnFilters,
-            columnVisibility,
-            rowSelection,
-        },
     });
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Arus Kas" />
 
-            <div className="flex flex-col gap-6 p-6">
+            <div className="flex flex-col gap-6 p-6 font-sans">
                 {flash.success && (
-                    <Alert className="border-emerald-200 bg-emerald-50 text-emerald-900">
+                    <Alert className="border-emerald-200 bg-emerald-50 text-emerald-900 dark:bg-emerald-950/20">
                         <CheckCircle2 className="h-4 w-4 stroke-emerald-600" />
-                        <AlertTitle className="font-bold">Berhasil</AlertTitle>
-                        <AlertDescription>{flash.success}</AlertDescription>
+                        <AlertTitle className="text-xs font-black tracking-widest text-emerald-700 uppercase">
+                            Berhasil
+                        </AlertTitle>
+                        <AlertDescription className="text-xs font-medium">
+                            {flash.success}
+                        </AlertDescription>
                     </Alert>
                 )}
 
+                {/* Header Area */}
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <h1 className="flex items-center gap-2 text-2xl font-black tracking-tight uppercase">
-                            <History className="h-6 w-6 text-primary" /> Arus
+                        <h1 className="flex items-center gap-3 text-3xl font-black tracking-tighter uppercase">
+                            <History className="h-8 w-8 text-primary" /> Arus
                             Kas
                         </h1>
-                        <p className="text-xs tracking-widest text-muted-foreground uppercase">
-                            Manajemen transaksi keuangan Anda.
+                        <p className="mt-1 text-xs font-bold tracking-[0.2em] text-muted-foreground uppercase">
+                            Monitor transaksi keuangan harian Anda.
                         </p>
                     </div>
                     <Button
                         onClick={() => setIsAddOpen(true)}
-                        className="px-6 text-xs font-bold tracking-widest uppercase shadow-lg"
+                        className="h-10 px-6 text-xs font-black tracking-widest uppercase shadow-lg transition-transform hover:scale-105"
                     >
                         <PlusCircle className="mr-2 h-4 w-4" /> Catat Transaksi
                     </Button>
                 </div>
 
-                <Tabs defaultValue="all" className="w-full">
-                    <div className="mb-4 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                        <TabsList className="grid w-full grid-cols-3 md:w-[400px]">
-                            <TabsTrigger
-                                value="all"
-                                onClick={() =>
+                {/* Filter & Data Table */}
+                <Card className="overflow-hidden border-none shadow-sm ring-1 ring-border">
+                    <div className="flex flex-col items-center justify-between gap-4 border-b bg-muted/20 p-4 md:flex-row">
+                        <Tabs
+                            defaultValue="all"
+                            className="w-full md:w-auto"
+                            onValueChange={(v) =>
+                                table
+                                    .getColumn('type')
+                                    ?.setFilterValue(v === 'all' ? '' : v)
+                            }
+                        >
+                            <TabsList className="h-9 border bg-background">
+                                <TabsTrigger
+                                    value="all"
+                                    className="px-4 text-[10px] font-black uppercase"
+                                >
+                                    Semua
+                                </TabsTrigger>
+                                <TabsTrigger
+                                    value="income"
+                                    className="px-4 text-[10px] font-black text-emerald-600 uppercase"
+                                >
+                                    Masuk
+                                </TabsTrigger>
+                                <TabsTrigger
+                                    value="expense"
+                                    className="px-4 text-[10px] font-black text-red-600 uppercase"
+                                >
+                                    Keluar
+                                </TabsTrigger>
+                            </TabsList>
+                        </Tabs>
+                        <div className="relative w-full md:w-[280px]">
+                            <Search className="absolute top-2.5 left-3 h-4 w-4 text-muted-foreground opacity-50" />
+                            <Input
+                                placeholder="Cari catatan..."
+                                className="h-9 border-muted bg-background pl-9 text-xs font-medium focus-visible:ring-primary"
+                                value={
+                                    (table
+                                        .getColumn('note')
+                                        ?.getFilterValue() as string) ?? ''
+                                }
+                                onChange={(e) =>
                                     table
-                                        .getColumn('category')
-                                        ?.setFilterValue('')
+                                        .getColumn('note')
+                                        ?.setFilterValue(e.target.value)
                                 }
-                            >
-                                Semua
-                            </TabsTrigger>
-                            <TabsTrigger
-                                value="income"
-                                onClick={() =>
-                                    table.setColumnFilters([
-                                        { id: 'category', value: 'income' },
-                                    ])
-                                }
-                            >
-                                Pemasukan
-                            </TabsTrigger>
-                            <TabsTrigger
-                                value="expense"
-                                onClick={() =>
-                                    table.setColumnFilters([
-                                        { id: 'category', value: 'expense' },
-                                    ])
-                                }
-                            >
-                                Pengeluaran
-                            </TabsTrigger>
-                        </TabsList>
-
-                        <div className="flex items-center gap-2">
-                            <div className="relative w-full md:w-[250px]">
-                                <Search className="absolute top-2.5 left-2.5 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                    placeholder="Cari catatan..."
-                                    value={
-                                        (table
-                                            .getColumn('note')
-                                            ?.getFilterValue() as string) ?? ''
-                                    }
-                                    onChange={(event) =>
-                                        table
-                                            .getColumn('note')
-                                            ?.setFilterValue(event.target.value)
-                                    }
-                                    className="h-9 bg-background pl-9 text-xs"
-                                />
-                            </div>
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="h-9"
-                                    >
-                                        <Columns2 className="mr-2 h-4 w-4" />{' '}
-                                        Kolom{' '}
-                                        <ChevronDown className="ml-2 h-4 w-4" />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    {table
-                                        .getAllColumns()
-                                        .filter((column) => column.getCanHide())
-                                        .map((column) => (
-                                            <DropdownMenuCheckboxItem
-                                                key={column.id}
-                                                className="capitalize"
-                                                checked={column.getIsVisible()}
-                                                onCheckedChange={(value) =>
-                                                    column.toggleVisibility(
-                                                        !!value,
-                                                    )
-                                                }
-                                            >
-                                                {column.id}
-                                            </DropdownMenuCheckboxItem>
-                                        ))}
-                                </DropdownMenuContent>
-                            </DropdownMenu>
+                            />
                         </div>
                     </div>
 
-                    <Card className="overflow-hidden border-none shadow-sm ring-1 ring-border">
-                        <CardContent className="p-0">
-                            <Table>
-                                <TableHeader className="bg-muted/50">
-                                    {table
-                                        .getHeaderGroups()
-                                        .map((headerGroup) => (
-                                            <TableRow key={headerGroup.id}>
-                                                {headerGroup.headers.map(
-                                                    (header) => (
-                                                        <TableHead
-                                                            key={header.id}
-                                                            className="py-3 text-[10px] font-black tracking-widest uppercase"
-                                                        >
-                                                            {header.isPlaceholder
-                                                                ? null
-                                                                : flexRender(
-                                                                      header
-                                                                          .column
-                                                                          .columnDef
-                                                                          .header,
-                                                                      header.getContext(),
-                                                                  )}
-                                                        </TableHead>
-                                                    ),
+                    <CardContent className="p-0">
+                        <Table>
+                            <TableHeader className="bg-muted/50">
+                                {table.getHeaderGroups().map((headerGroup) => (
+                                    <TableRow key={headerGroup.id}>
+                                        {headerGroup.headers.map((header) => (
+                                            <TableHead
+                                                key={header.id}
+                                                className="h-10 py-2 text-[11px] font-black tracking-widest text-muted-foreground uppercase"
+                                            >
+                                                {flexRender(
+                                                    header.column.columnDef
+                                                        .header,
+                                                    header.getContext(),
                                                 )}
-                                            </TableRow>
+                                            </TableHead>
                                         ))}
-                                </TableHeader>
-                                <TableBody>
-                                    {table.getRowModel().rows?.length ? (
-                                        table.getRowModel().rows.map((row) => (
-                                            <TableRow
-                                                key={row.id}
-                                                data-state={
-                                                    row.getIsSelected() &&
-                                                    'selected'
-                                                }
-                                                className="group transition-colors hover:bg-muted/30"
-                                            >
-                                                {row
-                                                    .getVisibleCells()
-                                                    .map((cell) => (
-                                                        <TableCell
-                                                            key={cell.id}
-                                                            className="py-3"
-                                                        >
-                                                            {flexRender(
-                                                                cell.column
-                                                                    .columnDef
-                                                                    .cell,
-                                                                cell.getContext(),
-                                                            )}
-                                                        </TableCell>
-                                                    ))}
-                                            </TableRow>
-                                        ))
-                                    ) : (
-                                        <TableRow>
-                                            <TableCell
-                                                colSpan={columns.length}
-                                                className="h-32 text-center text-muted-foreground"
-                                            >
-                                                Tidak ada data transaksi
-                                                ditemukan.
-                                            </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableHeader>
+                            <TableBody>
+                                {table.getRowModel().rows?.length ? (
+                                    table.getRowModel().rows.map((row) => (
+                                        <TableRow
+                                            key={row.id}
+                                            className="group transition-colors hover:bg-muted/30"
+                                        >
+                                            {row
+                                                .getVisibleCells()
+                                                .map((cell) => (
+                                                    <TableCell
+                                                        key={cell.id}
+                                                        className="py-4"
+                                                    >
+                                                        {flexRender(
+                                                            cell.column
+                                                                .columnDef.cell,
+                                                            cell.getContext(),
+                                                        )}
+                                                    </TableCell>
+                                                ))}
                                         </TableRow>
-                                    )}
-                                </TableBody>
-                            </Table>
-                        </CardContent>
-                        <div className="flex items-center justify-between border-t bg-muted/10 px-4 py-4 text-[10px] font-bold text-muted-foreground uppercase">
-                            <div>
-                                {
-                                    table.getFilteredSelectedRowModel().rows
-                                        .length
-                                }{' '}
-                                dari {table.getFilteredRowModel().rows.length}{' '}
-                                baris dipilih.
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() =>
-                                        router.get(transactions.prev_page_url)
-                                    }
-                                    disabled={!transactions.prev_page_url}
-                                    className="h-8 text-[10px] font-black uppercase"
-                                >
-                                    Sebelumnya
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() =>
-                                        router.get(transactions.next_page_url)
-                                    }
-                                    disabled={!transactions.next_page_url}
-                                    className="h-8 text-[10px] font-black uppercase"
-                                >
-                                    Berikutnya
-                                </Button>
-                            </div>
+                                    ))
+                                ) : (
+                                    <TableRow>
+                                        <TableCell
+                                            colSpan={5}
+                                            className="h-32 text-center font-medium text-muted-foreground italic"
+                                        >
+                                            <Inbox
+                                                size={32}
+                                                className="mx-auto mb-2 opacity-20"
+                                            />
+                                            Data transaksi belum tersedia.
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+
+                    {/* Pagination */}
+                    <div className="flex items-center justify-between border-t bg-muted/5 px-6 py-4">
+                        <div className="text-[10px] font-black tracking-wider text-muted-foreground uppercase">
+                            Page {transactions.current_page} of{' '}
+                            {transactions.last_page}
                         </div>
-                    </Card>
-                </Tabs>
+                        <div className="flex items-center gap-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                    router.get(transactions.prev_page_url)
+                                }
+                                disabled={!transactions.prev_page_url}
+                                className="h-8 px-3 text-[10px] font-black uppercase shadow-sm"
+                            >
+                                Prev
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                    router.get(transactions.next_page_url)
+                                }
+                                disabled={!transactions.next_page_url}
+                                className="h-8 px-3 text-[10px] font-black uppercase shadow-sm"
+                            >
+                                Next
+                            </Button>
+                        </div>
+                    </div>
+                </Card>
             </div>
 
+            {/* MODAL: FORM ADD/EDIT */}
             <Dialog
                 open={isAddOpen || isEditOpen}
                 onOpenChange={(v) => {
@@ -541,58 +466,67 @@ export default function TransactionIndex({
                     }
                 }}
             >
-                <DialogContent className="sm:max-w-[425px]">
-                    <DialogHeader>
+                <DialogContent className="overflow-hidden border-none p-0 shadow-2xl sm:max-w-[450px]">
+                    <DialogHeader className="bg-slate-950 p-6 text-white">
                         <DialogTitle className="flex items-center gap-2 text-xl font-black tracking-tighter uppercase">
-                            {isAddOpen ? (
-                                <PlusCircle className="h-5 w-5 text-primary" />
-                            ) : (
-                                <Edit2 className="h-5 w-5 text-primary" />
-                            )}
-                            {isAddOpen ? 'Catat Transaksi' : 'Ubah Transaksi'}
+                            {isAddOpen ? <PlusCircle /> : <Edit2 />}{' '}
+                            {isAddOpen ? 'Catat Arus Kas' : 'Ubah Transaksi'}
                         </DialogTitle>
                     </DialogHeader>
 
-                    <form onSubmit={submitForm} className="space-y-5 pt-2">
-                        <div className="grid grid-cols-2 gap-2 rounded-lg bg-muted p-1">
+                    <form
+                        onSubmit={submitForm}
+                        className="space-y-5 bg-card p-6 font-sans"
+                    >
+                        {/* Selector Tipe */}
+                        <div className="grid grid-cols-3 gap-2 rounded-lg bg-muted p-1">
                             <Button
                                 type="button"
-                                size="sm"
                                 variant={
                                     form.data.type === 'expense'
                                         ? 'destructive'
                                         : 'ghost'
                                 }
-                                className="w-full font-bold shadow-sm"
+                                className="h-8 text-[10px] font-black uppercase"
                                 onClick={() => form.setData('type', 'expense')}
                             >
-                                <ArrowDownLeft className="mr-1 h-3 w-3" />{' '}
-                                Pengeluaran
+                                Keluar
                             </Button>
                             <Button
                                 type="button"
-                                size="sm"
                                 variant={
                                     form.data.type === 'income'
                                         ? 'default'
                                         : 'ghost'
                                 }
-                                className={`w-full font-bold ${form.data.type === 'income' ? 'bg-emerald-600 hover:bg-emerald-700' : ''}`}
+                                className={`h-8 text-[10px] font-black uppercase ${form.data.type === 'income' ? 'bg-emerald-600' : ''}`}
                                 onClick={() => form.setData('type', 'income')}
                             >
-                                <ArrowUpRight className="mr-1 h-3 w-3" />{' '}
-                                Pemasukan
+                                Masuk
+                            </Button>
+                            <Button
+                                type="button"
+                                variant={
+                                    form.data.type === 'transfer'
+                                        ? 'secondary'
+                                        : 'ghost'
+                                }
+                                className="h-8 text-[10px] font-black uppercase"
+                                onClick={() => form.setData('type', 'transfer')}
+                            >
+                                <ArrowRightLeft size={12} className="mr-1" />{' '}
+                                Transfer
                             </Button>
                         </div>
 
-                        <div className="grid gap-4">
-                            <div className="space-y-2">
+                        <div className="space-y-4">
+                            <div className="space-y-1.5">
                                 <Label className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">
                                     Nominal (Rp)
                                 </Label>
                                 <Input
                                     type="number"
-                                    className="text-lg font-bold"
+                                    className="h-11 border-2 text-lg font-black tabular-nums focus-visible:ring-primary"
                                     value={form.data.amount}
                                     onChange={(e) =>
                                         form.setData(
@@ -604,9 +538,11 @@ export default function TransactionIndex({
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
+                                <div className="space-y-1.5">
                                     <Label className="text-[10px] font-black text-muted-foreground uppercase">
-                                        Dompet
+                                        {form.data.type === 'transfer'
+                                            ? 'Dari'
+                                            : 'Dompet'}
                                     </Label>
                                     <Select
                                         value={String(form.data.wallet_id)}
@@ -614,8 +550,8 @@ export default function TransactionIndex({
                                             form.setData('wallet_id', Number(v))
                                         }
                                     >
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Dompet" />
+                                        <SelectTrigger className="h-9 text-xs font-bold uppercase">
+                                            <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
                                             {wallets.map((w: any) => (
@@ -629,141 +565,145 @@ export default function TransactionIndex({
                                         </SelectContent>
                                     </Select>
                                 </div>
-                                <div className="space-y-2">
-                                    <Label className="text-[10px] font-black text-muted-foreground uppercase">
-                                        Kategori
-                                    </Label>
-                                    <Select
-                                        value={
-                                            form.data.category_id
-                                                ? String(form.data.category_id)
-                                                : 'null'
-                                        }
-                                        onValueChange={(v) =>
-                                            form.setData(
-                                                'category_id',
-                                                v === 'null' ? null : Number(v),
-                                            )
-                                        }
-                                    >
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Kategori" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="null">
-                                                Lainnya
-                                            </SelectItem>
-                                            {categories
-                                                .filter(
-                                                    (c: any) =>
-                                                        c.type ===
-                                                        form.data.type,
+                                {form.data.type === 'transfer' ? (
+                                    <div className="animate-in space-y-1.5 fade-in slide-in-from-right-2">
+                                        <Label className="text-[10px] font-black text-blue-600 uppercase">
+                                            Ke Tujuan
+                                        </Label>
+                                        <Select
+                                            value={String(
+                                                form.data.to_wallet_id,
+                                            )}
+                                            onValueChange={(v) =>
+                                                form.setData(
+                                                    'to_wallet_id',
+                                                    Number(v),
                                                 )
-                                                .map((c: any) => (
+                                            }
+                                        >
+                                            <SelectTrigger className="h-9 border-blue-200 bg-blue-50/30 text-xs font-bold uppercase">
+                                                <SelectValue placeholder="Pilih Tujuan" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {wallets.map((w: any) => (
                                                     <SelectItem
-                                                        key={c.id}
-                                                        value={String(c.id)}
+                                                        key={w.id}
+                                                        value={String(w.id)}
                                                     >
-                                                        {c.name}
+                                                        {w.name}
                                                     </SelectItem>
                                                 ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-1.5">
+                                        <Label className="text-[10px] font-black text-muted-foreground uppercase">
+                                            Kategori
+                                        </Label>
+                                        <Select
+                                            value={
+                                                form.data.category_id
+                                                    ? String(
+                                                          form.data.category_id,
+                                                      )
+                                                    : 'null'
+                                            }
+                                            onValueChange={(v) =>
+                                                form.setData(
+                                                    'category_id',
+                                                    v === 'null'
+                                                        ? null
+                                                        : Number(v),
+                                                )
+                                            }
+                                        >
+                                            <SelectTrigger className="h-9 text-xs font-bold uppercase">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="null">
+                                                    Lainnya
+                                                </SelectItem>
+                                                {categories
+                                                    .filter(
+                                                        (c: any) =>
+                                                            c.type ===
+                                                            form.data.type,
+                                                    )
+                                                    .map((c: any) => (
+                                                        <SelectItem
+                                                            key={c.id}
+                                                            value={String(c.id)}
+                                                        >
+                                                            {c.name}
+                                                        </SelectItem>
+                                                    ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                )}
                             </div>
 
-                            <div className="space-y-2 rounded-md bg-blue-50/50 p-3 ring-1 ring-blue-100">
-                                <Label className="flex items-center gap-1 text-[9px] font-black text-blue-600 uppercase">
-                                    <Target className="h-3 w-3" /> Hubungkan
-                                    Tabungan
-                                </Label>
-                                <Select
-                                    value={
-                                        form.data.goal_id
-                                            ? String(form.data.goal_id)
-                                            : 'null'
-                                    }
-                                    onValueChange={(v) =>
-                                        form.setData(
-                                            'goal_id',
-                                            v === 'null' ? null : Number(v),
-                                        )
-                                    }
-                                >
-                                    <SelectTrigger className="h-8 border-blue-200 bg-background text-xs font-medium">
-                                        <SelectValue placeholder="Pilih Goal" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="null">
-                                            Tidak Ada
-                                        </SelectItem>
-                                        {goals.map((g: any) => (
-                                            <SelectItem
-                                                key={g.id}
-                                                value={String(g.id)}
-                                            >
-                                                {g.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            <div className="space-y-2">
+                            <div className="space-y-1.5">
                                 <Label className="text-[10px] font-black text-muted-foreground uppercase">
                                     Tanggal & Catatan
                                 </Label>
-                                <Input
-                                    type="date"
-                                    value={form.data.occurred_at}
-                                    onChange={(e) =>
-                                        form.setData(
-                                            'occurred_at',
-                                            e.target.value,
-                                        )
-                                    }
-                                />
-                                <Input
-                                    value={form.data.note}
-                                    onChange={(e) =>
-                                        form.setData('note', e.target.value)
-                                    }
-                                    placeholder="Misal: Makan siang"
-                                />
+                                <div className="grid gap-3">
+                                    <Input
+                                        type="date"
+                                        className="h-9 font-bold"
+                                        value={form.data.occurred_at}
+                                        onChange={(e) =>
+                                            form.setData(
+                                                'occurred_at',
+                                                e.target.value,
+                                            )
+                                        }
+                                    />
+                                    <Input
+                                        placeholder="Tulis keterangan..."
+                                        className="h-9 text-sm"
+                                        value={form.data.note}
+                                        onChange={(e) =>
+                                            form.setData('note', e.target.value)
+                                        }
+                                    />
+                                </div>
                             </div>
                         </div>
 
-                        <DialogFooter>
+                        <DialogFooter className="pt-2">
                             <Button
                                 type="submit"
                                 disabled={form.processing}
-                                className="h-11 w-full text-xs font-black tracking-widest uppercase"
+                                className="h-11 w-full text-xs font-black tracking-widest uppercase shadow-md"
                             >
-                                {form.processing
-                                    ? 'Menyimpan...'
-                                    : 'Simpan Transaksi'}
+                                Simpan
                             </Button>
                         </DialogFooter>
                     </form>
                 </DialogContent>
             </Dialog>
 
+            {/* ALERT DELETE */}
             <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
-                <AlertDialogContent>
+                <AlertDialogContent className="rounded-2xl border-none shadow-2xl">
                     <AlertDialogHeader>
-                        <AlertDialogTitle>
-                            Hapus transaksi ini?
+                        <AlertDialogTitle className="text-xl font-black tracking-tight uppercase">
+                            Hapus transaksi?
                         </AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Data akan dihapus permanen dan saldo akan
-                            disesuaikan.
+                        <AlertDialogDescription className="text-sm font-medium">
+                            Data ini akan dihapus secara permanen.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Batal</AlertDialogCancel>
+                    <AlertDialogFooter className="mt-2">
+                        <AlertDialogCancel className="h-10 px-6 text-[10px] font-bold tracking-widest text-foreground uppercase">
+                            Batal
+                        </AlertDialogCancel>
                         <AlertDialogAction
                             onClick={confirmDelete}
-                            className="bg-red-600 font-bold hover:bg-red-700"
+                            className="h-10 bg-red-600 px-6 text-[10px] font-bold tracking-widest uppercase hover:bg-red-700"
                         >
                             Hapus
                         </AlertDialogAction>

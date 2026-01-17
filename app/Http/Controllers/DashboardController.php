@@ -20,27 +20,21 @@ class DashboardController extends Controller
         $thisMonth = now()->format('Y-m');
         $startOfMonth = now()->startOfMonth();
 
-        // 1. Perhitungan Net Worth (Kekayaan Bersih) Saat Ini
+        // 1. Perhitungan Net Worth (Kekayaan Bersih)
         $totalWalletBalance = (float) Wallet::where('user_id', $userId)->sum('balance');
         $totalAssetValue = (float) FixedAsset::where('user_id', $userId)->sum('value');
         $netWorth = $totalWalletBalance + $totalAssetValue;
 
-        // 2. Perhitungan Pertumbuhan (Dibandingkan Awal Bulan)
-        // Hitung berapa kenaikan saldo dari transaksi bulan ini
+        // 2. Perhitungan Pertumbuhan (vs Awal Bulan)
         $incomeThisMonth = (float) Transaction::where('user_id', $userId)->where('type', 'income')->where('occurred_at', '>=', $startOfMonth)->sum('amount');
         $expenseThisMonth = (float) Transaction::where('user_id', $userId)->where('type', 'expense')->where('occurred_at', '>=', $startOfMonth)->sum('amount');
         $netFlowThisMonth = $incomeThisMonth - $expenseThisMonth;
-
-        // Hitung aset tetap yang baru ditambahkan bulan ini
         $newAssetsThisMonth = (float) FixedAsset::where('user_id', $userId)->where('created_at', '>=', $startOfMonth)->sum('value');
 
-        // Net Worth Awal Bulan = Net Worth Sekarang - (Arus Kas Bersih + Aset Baru)
         $prevNetWorth = $netWorth - ($netFlowThisMonth + $newAssetsThisMonth);
-
-        // Hitung Persentase Kenaikan
         $growthPct = $prevNetWorth > 0 ? (($netWorth - $prevNetWorth) / $prevNetWorth) * 100 : 0;
 
-        // 3. Info Arus Kas Hari Ini
+        // 3. Arus Kas Hari Ini
         $incomeToday = (float) Transaction::where('user_id', $userId)->where('type', 'income')->whereDate('occurred_at', $today)->sum('amount');
         $expenseToday = (float) Transaction::where('user_id', $userId)->where('type', 'expense')->whereDate('occurred_at', $today)->sum('amount');
 
@@ -73,7 +67,7 @@ class DashboardController extends Controller
         $recentTransactions = Transaction::where('user_id', $userId)
             ->with(['category', 'wallet'])
             ->latest('occurred_at')
-            ->take(5)
+            ->take(6) // Naikkan sedikit itemnya agar padat
             ->get();
 
         return Inertia::render('dashboard', [

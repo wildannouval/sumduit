@@ -65,7 +65,6 @@ import {
     MoreHorizontal,
     PiggyBank,
     Plus,
-    PlusCircle,
     Trash2,
     Wallet as WalletIcon,
 } from 'lucide-react';
@@ -102,8 +101,10 @@ export default function WalletIndex({
     });
 
     const transferForm = useForm({
-        from_wallet_id: wallets[0]?.id || 0,
-        to_wallet_id: wallets[1]?.id || wallets[0]?.id || 0,
+        from_wallet_id: (wallets[0]?.id || '') as string | number,
+        to_wallet_id: (wallets[1]?.id || wallets[0]?.id || '') as
+            | string
+            | number,
         amount: 0,
         note: '',
         transferred_at: new Date().toISOString().slice(0, 10),
@@ -137,7 +138,6 @@ export default function WalletIndex({
         e.preventDefault();
         const url = isAddOpen ? '/wallets' : `/wallets/${selectedWallet?.id}`;
         const method = isAddOpen ? 'post' : 'put';
-
         router[method](url, walletForm.data as any, {
             onSuccess: () => {
                 setIsAddOpen(false);
@@ -163,93 +163,96 @@ export default function WalletIndex({
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Dompet" />
+            <Head title="Dompet & Saldo" />
 
-            <div className="flex flex-col gap-6 p-6">
-                {/* 1. Flash Message */}
+            <div className="flex flex-col gap-6 p-6 font-sans">
+                {/* 1. Notifications */}
                 {flash.success && (
                     <Alert className="border-emerald-200 bg-emerald-50 text-emerald-900 dark:bg-emerald-950/20">
                         <CheckCircle2 className="h-4 w-4 stroke-emerald-600" />
-                        <AlertTitle className="font-bold">Berhasil</AlertTitle>
-                        <AlertDescription>{flash.success}</AlertDescription>
+                        <AlertTitle className="text-xs font-black tracking-widest text-emerald-700 uppercase">
+                            Berhasil
+                        </AlertTitle>
+                        <AlertDescription className="text-xs font-medium">
+                            {flash.success}
+                        </AlertDescription>
                     </Alert>
                 )}
 
-                {/* 2. Top Summary Card */}
+                {/* 2. Top Summary Section */}
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                    <Card className="relative overflow-hidden border-none bg-slate-950 text-white shadow-sm ring-1 ring-border md:col-span-2 dark:bg-slate-900">
-                        <div className="absolute top-[-20px] right-[-20px] opacity-10">
-                            <WalletIcon size={180} />
+                    <Card className="relative overflow-hidden border-none bg-slate-950 text-white shadow-xl ring-1 ring-border md:col-span-2 dark:bg-slate-900">
+                        <div className="absolute top-[-10px] right-[-10px] rotate-12 opacity-10">
+                            <WalletIcon size={160} />
                         </div>
-                        <CardHeader>
-                            <CardDescription className="text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                        <CardHeader className="pb-2">
+                            <CardDescription className="text-[10px] font-black tracking-[0.2em] text-slate-400 uppercase">
                                 Total Saldo Terkonsolidasi
                             </CardDescription>
-                            <CardTitle className="text-4xl font-black">
+                            <CardTitle className="text-4xl font-black tracking-tighter tabular-nums">
                                 {formatIDR(totalBalance)}
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <p className="text-xs text-slate-400">
-                                Dari {wallets.length} dompet aktif Anda.
+                            <p className="text-xs font-medium tracking-wide text-slate-500 uppercase">
+                                Tersebar di {wallets.length} Akun Keuangan
                             </p>
                         </CardContent>
                     </Card>
 
                     <Card
-                        className="group flex cursor-pointer flex-col items-center justify-center border-2 border-dashed border-none bg-muted/20 p-6 text-center shadow-sm ring-1 ring-border transition-all hover:ring-primary"
+                        className="group flex cursor-pointer flex-col items-center justify-center border-none bg-card p-6 text-center shadow-sm ring-1 ring-border transition-all hover:ring-primary/50"
                         onClick={() => setIsAddOpen(true)}
                     >
-                        <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 transition-colors group-hover:bg-primary group-hover:text-white">
-                            <Plus size={24} />
+                        <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-white">
+                            <Plus size={24} strokeWidth={3} />
                         </div>
-                        <h3 className="text-sm font-bold tracking-tight uppercase">
+                        <h3 className="text-sm font-black tracking-tight uppercase">
                             Tambah Dompet
                         </h3>
-                        <p className="mt-1 text-[10px] text-muted-foreground uppercase">
-                            Input aset likuid baru
+                        <p className="mt-1 text-[10px] font-bold text-muted-foreground uppercase opacity-60">
+                            Input Aset Likuid Baru
                         </p>
                     </Card>
                 </div>
 
-                {/* 3. Actions Header */}
-                <div className="flex items-center justify-between">
+                {/* 3. List Header */}
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <h2 className="text-xl font-black tracking-tighter uppercase">
-                            Daftar Dompet
+                        <h2 className="text-2xl font-black tracking-tighter uppercase">
+                            Daftar Akun
                         </h2>
-                        <p className="text-xs text-muted-foreground">
-                            Rincian saldo per akun keuangan.
+                        <p className="text-xs font-bold tracking-widest text-muted-foreground uppercase opacity-60">
+                            Rincian saldo per sumber dana
                         </p>
                     </div>
                     <Button
                         variant="outline"
-                        size="sm"
                         onClick={() => setIsTransferOpen(true)}
                         disabled={wallets.length < 2}
-                        className="h-9 px-4 text-[10px] font-bold tracking-widest uppercase"
+                        className="h-10 px-6 text-[10px] font-black tracking-widest uppercase shadow-sm transition-all hover:bg-blue-50 hover:text-blue-600"
                     >
                         <ArrowRightLeft className="mr-2 h-4 w-4" /> Transfer
                         Antar Dompet
                     </Button>
                 </div>
 
-                {/* 4. Table Section */}
+                {/* 4. Data Table */}
                 <Card className="overflow-hidden border-none shadow-sm ring-1 ring-border">
                     <CardContent className="p-0">
                         <Table>
                             <TableHeader className="bg-muted/50">
                                 <TableRow>
-                                    <TableHead className="py-3 text-[10px] font-black tracking-widest uppercase">
-                                        Nama Dompet
+                                    <TableHead className="py-4 text-[11px] font-black tracking-widest text-muted-foreground uppercase">
+                                        Identitas Dompet
                                     </TableHead>
-                                    <TableHead className="py-3 text-center text-[10px] font-black tracking-widest uppercase">
-                                        Tipe
+                                    <TableHead className="py-4 text-center text-[11px] font-black tracking-widest text-muted-foreground uppercase">
+                                        Tipe Akun
                                     </TableHead>
-                                    <TableHead className="py-3 text-right text-[10px] font-black tracking-widest uppercase">
-                                        Saldo
+                                    <TableHead className="py-4 text-right text-[11px] font-black tracking-widest text-muted-foreground uppercase">
+                                        Saldo Saat Ini
                                     </TableHead>
-                                    <TableHead className="py-3 text-right text-[10px] font-black tracking-widest uppercase">
+                                    <TableHead className="py-4 text-right text-[11px] font-black tracking-widest text-muted-foreground uppercase">
                                         Aksi
                                     </TableHead>
                                 </TableRow>
@@ -261,18 +264,18 @@ export default function WalletIndex({
                                             key={w.id}
                                             className="group transition-colors hover:bg-muted/30"
                                         >
-                                            <TableCell className="py-4">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/5 text-primary transition-colors group-hover:bg-primary group-hover:text-white">
+                                            <TableCell className="py-5">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/5 text-primary transition-colors group-hover:bg-primary group-hover:text-white">
                                                         {getWalletIcon(w.type)}
                                                     </div>
                                                     <div>
-                                                        <div className="text-sm leading-none font-bold">
+                                                        <div className="text-sm font-black tracking-tight uppercase">
                                                             {w.name}
                                                         </div>
-                                                        <div className="mt-1 text-[10px] font-medium tracking-tight text-muted-foreground uppercase">
+                                                        <div className="mt-1 text-[10px] font-bold tracking-widest text-muted-foreground uppercase opacity-60">
                                                             {w.account_number ||
-                                                                'Tanpa Nomor Rekening'}
+                                                                'Internal Account'}
                                                         </div>
                                                     </div>
                                                 </div>
@@ -280,12 +283,12 @@ export default function WalletIndex({
                                             <TableCell className="text-center">
                                                 <Badge
                                                     variant="outline"
-                                                    className="h-5 px-2 text-[9px] font-bold tracking-tighter uppercase"
+                                                    className="h-5 border-muted-foreground/20 px-2 text-[9px] font-black tracking-tighter text-muted-foreground uppercase"
                                                 >
                                                     {w.type}
                                                 </Badge>
                                             </TableCell>
-                                            <TableCell className="text-right font-black text-primary">
+                                            <TableCell className="text-right text-base font-black text-primary tabular-nums">
                                                 {formatIDR(Number(w.balance))}
                                             </TableCell>
                                             <TableCell className="text-right">
@@ -297,24 +300,32 @@ export default function WalletIndex({
                                                             variant="ghost"
                                                             className="h-8 w-8 p-0 opacity-50 group-hover:opacity-100"
                                                         >
-                                                            <MoreHorizontal className="h-4 w-4" />
+                                                            <MoreHorizontal
+                                                                size={16}
+                                                            />
                                                         </Button>
                                                     </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end">
-                                                        <DropdownMenuLabel className="text-[10px] font-black uppercase">
-                                                            Manajemen
+                                                    <DropdownMenuContent
+                                                        align="end"
+                                                        className="w-40 rounded-xl border-none shadow-xl ring-1 ring-border"
+                                                    >
+                                                        <DropdownMenuLabel className="text-[10px] font-black tracking-widest uppercase opacity-50">
+                                                            Opsi Dompet
                                                         </DropdownMenuLabel>
                                                         <DropdownMenuItem
                                                             onClick={() =>
                                                                 openEdit(w)
                                                             }
+                                                            className="cursor-pointer text-xs font-bold uppercase"
                                                         >
-                                                            <Edit2 className="mr-2 h-3.5 w-3.5" />{' '}
-                                                            Ubah
+                                                            <Edit2
+                                                                size={14}
+                                                                className="mr-2"
+                                                            />{' '}
+                                                            Ubah Data
                                                         </DropdownMenuItem>
                                                         <DropdownMenuSeparator />
                                                         <DropdownMenuItem
-                                                            className="text-red-600"
                                                             onClick={() => {
                                                                 setSelectedWallet(
                                                                     w,
@@ -323,9 +334,13 @@ export default function WalletIndex({
                                                                     true,
                                                                 );
                                                             }}
+                                                            className="cursor-pointer text-xs font-bold text-red-600 uppercase"
                                                         >
-                                                            <Trash2 className="mr-2 h-3.5 w-3.5" />{' '}
-                                                            Hapus
+                                                            <Trash2
+                                                                size={14}
+                                                                className="mr-2"
+                                                            />{' '}
+                                                            Hapus Akun
                                                         </DropdownMenuItem>
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
@@ -338,13 +353,13 @@ export default function WalletIndex({
                                             colSpan={4}
                                             className="h-48 text-center"
                                         >
-                                            <div className="flex flex-col items-center justify-center text-muted-foreground opacity-30">
+                                            <div className="flex flex-col items-center justify-center opacity-30">
                                                 <Inbox
                                                     size={48}
                                                     className="mb-2"
                                                 />
-                                                <p className="text-sm font-bold tracking-widest uppercase">
-                                                    Belum ada dompet
+                                                <p className="text-xs font-black tracking-widest text-muted-foreground uppercase">
+                                                    Data Dompet Kosong
                                                 </p>
                                             </div>
                                         </TableCell>
@@ -366,39 +381,39 @@ export default function WalletIndex({
                     }
                 }}
             >
-                <DialogContent className="sm:max-w-[400px]">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2 text-xl font-black tracking-tighter uppercase">
-                            {isAddOpen ? (
-                                <PlusCircle className="h-5 w-5 text-primary" />
-                            ) : (
-                                <Edit2 className="h-5 w-5 text-primary" />
-                            )}
-                            {isAddOpen ? 'Tambah Dompet' : 'Ubah Dompet'}
+                <DialogContent className="overflow-hidden border-none p-0 shadow-2xl sm:max-w-[450px]">
+                    <DialogHeader className="bg-slate-950 p-8 text-white">
+                        <DialogTitle className="flex items-center gap-2 text-2xl font-black tracking-tighter uppercase">
+                            <WalletIcon size={24} className="text-primary" />{' '}
+                            {isAddOpen ? 'Tambah Dompet' : 'Ubah Detail Dompet'}
                         </DialogTitle>
-                        <DialogDescription className="text-xs tracking-tight uppercase">
-                            Atur sumber dana dan simpanan Anda.
+                        <DialogDescription className="text-xs font-bold tracking-widest text-slate-400 uppercase opacity-80">
+                            Konfigurasi sumber dana Anda.
                         </DialogDescription>
                     </DialogHeader>
 
-                    <form onSubmit={submitWallet} className="space-y-4 pt-4">
+                    <form
+                        onSubmit={submitWallet}
+                        className="space-y-6 bg-card p-8"
+                    >
                         <div className="space-y-2">
-                            <Label className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">
-                                Nama Akun / Dompet
+                            <Label className="text-[11px] font-black tracking-widest text-muted-foreground uppercase">
+                                Nama Dompet / Bank
                             </Label>
                             <Input
-                                placeholder="Misal: BCA Utama, Jago Tabungan"
+                                placeholder="Misal: BCA Utama, Wallet Digital"
                                 value={walletForm.data.name}
                                 onChange={(e) =>
                                     walletForm.setData('name', e.target.value)
                                 }
+                                className="font-bold"
                             />
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">
-                                    Tipe
+                                <Label className="text-[11px] font-black tracking-widest text-muted-foreground uppercase">
+                                    Tipe Akun
                                 </Label>
                                 <Select
                                     value={walletForm.data.type}
@@ -406,34 +421,50 @@ export default function WalletIndex({
                                         walletForm.setData('type', v)
                                     }
                                 >
-                                    <SelectTrigger>
+                                    <SelectTrigger className="h-10 text-xs font-bold text-foreground uppercase">
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="bank">
+                                        <SelectItem
+                                            value="bank"
+                                            className="text-xs font-bold tracking-tighter uppercase"
+                                        >
                                             Bank Account
                                         </SelectItem>
-                                        <SelectItem value="cash">
+                                        <SelectItem
+                                            value="cash"
+                                            className="text-xs font-bold tracking-tighter uppercase"
+                                        >
                                             Cash / Tunai
                                         </SelectItem>
-                                        <SelectItem value="ewallet">
+                                        <SelectItem
+                                            value="ewallet"
+                                            className="text-xs font-bold tracking-tighter uppercase"
+                                        >
                                             E-Wallet
                                         </SelectItem>
-                                        <SelectItem value="savings">
+                                        <SelectItem
+                                            value="savings"
+                                            className="text-xs font-bold tracking-tighter uppercase"
+                                        >
                                             Tabungan
                                         </SelectItem>
-                                        <SelectItem value="emergency">
+                                        <SelectItem
+                                            value="emergency"
+                                            className="text-xs font-bold tracking-tighter text-blue-600 uppercase"
+                                        >
                                             Dana Darurat
                                         </SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
                             <div className="space-y-2">
-                                <Label className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">
+                                <Label className="text-[11px] font-black tracking-widest text-muted-foreground uppercase">
                                     Saldo Saat Ini
                                 </Label>
                                 <Input
                                     type="number"
+                                    className="h-10 font-black tabular-nums"
                                     value={walletForm.data.balance}
                                     onChange={(e) =>
                                         walletForm.setData(
@@ -446,11 +477,11 @@ export default function WalletIndex({
                         </div>
 
                         <div className="space-y-2">
-                            <Label className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">
+                            <Label className="text-[11px] font-black tracking-widest text-muted-foreground uppercase">
                                 Nomor Rekening (Opsional)
                             </Label>
                             <Input
-                                placeholder="000-000-000"
+                                placeholder="000-000-000-00"
                                 value={walletForm.data.account_number}
                                 onChange={(e) =>
                                     walletForm.setData(
@@ -461,37 +492,42 @@ export default function WalletIndex({
                             />
                         </div>
 
-                        <DialogFooter>
+                        <DialogFooter className="pt-2">
                             <Button
                                 type="submit"
                                 disabled={walletForm.processing}
-                                className="h-11 w-full text-xs font-black tracking-widest uppercase"
+                                className="h-12 w-full text-xs font-black tracking-[0.2em] uppercase shadow-lg transition-transform hover:scale-[1.02] active:scale-95"
                             >
-                                {walletForm.processing
-                                    ? 'Memproses...'
-                                    : 'Simpan Dompet'}
+                                Simpan Dompet
                             </Button>
                         </DialogFooter>
                     </form>
                 </DialogContent>
             </Dialog>
 
-            {/* MODAL: TRANSFER */}
+            {/* MODAL: TRANSFER BALANCES */}
             <Dialog open={isTransferOpen} onOpenChange={setIsTransferOpen}>
-                <DialogContent className="sm:max-w-[400px]">
-                    <DialogHeader>
-                        <DialogTitle className="text-xl font-black tracking-tighter uppercase">
-                            Transfer Saldo
+                <DialogContent className="overflow-hidden border-none p-0 shadow-2xl sm:max-w-[420px]">
+                    <DialogHeader className="bg-slate-950 p-8 text-white">
+                        <DialogTitle className="flex items-center gap-2 text-2xl font-black tracking-tighter uppercase">
+                            <ArrowRightLeft
+                                size={24}
+                                className="text-primary"
+                            />{' '}
+                            Transfer Dana
                         </DialogTitle>
-                        <DialogDescription className="text-xs tracking-tight uppercase">
-                            Pindahkan dana antar dompet tanpa mencatat
-                            pengeluaran.
+                        <DialogDescription className="text-xs font-bold tracking-widest text-slate-400 uppercase opacity-80">
+                            Pindah saldo antar akun secara instan.
                         </DialogDescription>
                     </DialogHeader>
-                    <form onSubmit={submitTransfer} className="space-y-4 pt-4">
-                        <div className="grid grid-cols-1 gap-4 rounded-lg bg-muted/30 p-3 ring-1 ring-border">
+
+                    <form
+                        onSubmit={submitTransfer}
+                        className="space-y-6 bg-card p-8"
+                    >
+                        <div className="grid grid-cols-1 gap-6 rounded-2xl bg-muted/40 p-4 ring-1 ring-border">
                             <div className="space-y-2">
-                                <Label className="text-[9px] font-black text-muted-foreground uppercase">
+                                <Label className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">
                                     Dari Dompet
                                 </Label>
                                 <Select
@@ -505,7 +541,7 @@ export default function WalletIndex({
                                         )
                                     }
                                 >
-                                    <SelectTrigger className="bg-background">
+                                    <SelectTrigger className="h-10 border-none bg-background text-xs font-black uppercase shadow-sm">
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -513,25 +549,27 @@ export default function WalletIndex({
                                             <SelectItem
                                                 key={w.id}
                                                 value={String(w.id)}
+                                                className="text-xs font-bold tracking-tighter uppercase"
                                             >
-                                                {w.name} (
-                                                {formatIDR(Number(w.balance))})
+                                                {w.name}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div className="relative z-10 -my-2 flex justify-center">
-                                <div className="rounded-full bg-primary p-1.5 text-white shadow-lg">
+
+                            <div className="relative z-10 -my-3 flex justify-center">
+                                <div className="rounded-full bg-primary p-1.5 text-white shadow-md ring-4 ring-card">
                                     <ArrowRightLeft
-                                        size={14}
+                                        size={16}
                                         className="rotate-90"
                                     />
                                 </div>
                             </div>
+
                             <div className="space-y-2">
-                                <Label className="text-[9px] font-black text-muted-foreground uppercase">
-                                    Ke Dompet
+                                <Label className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">
+                                    Ke Tujuan
                                 </Label>
                                 <Select
                                     value={String(
@@ -544,7 +582,7 @@ export default function WalletIndex({
                                         )
                                     }
                                 >
-                                    <SelectTrigger className="bg-background">
+                                    <SelectTrigger className="h-10 border-none bg-background text-xs font-black text-blue-600 uppercase shadow-sm">
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -552,6 +590,7 @@ export default function WalletIndex({
                                             <SelectItem
                                                 key={w.id}
                                                 value={String(w.id)}
+                                                className="text-xs font-bold tracking-tighter uppercase"
                                             >
                                                 {w.name}
                                             </SelectItem>
@@ -561,53 +600,89 @@ export default function WalletIndex({
                             </div>
                         </div>
 
-                        <div className="space-y-2">
-                            <Label className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">
-                                Jumlah Transfer
-                            </Label>
-                            <Input
-                                type="number"
-                                className="text-lg font-bold"
-                                value={transferForm.data.amount}
-                                onChange={(e) =>
-                                    transferForm.setData(
-                                        'amount',
-                                        Number(e.target.value),
-                                    )
-                                }
-                            />
+                        <div className="grid grid-cols-1 gap-4">
+                            <div className="space-y-2">
+                                <Label className="text-[11px] font-black tracking-widest text-muted-foreground uppercase">
+                                    Nominal Transfer (Rp)
+                                </Label>
+                                <Input
+                                    type="number"
+                                    className="h-12 border-2 text-xl font-black tabular-nums focus-visible:ring-primary"
+                                    value={transferForm.data.amount}
+                                    onChange={(e) =>
+                                        transferForm.setData(
+                                            'amount',
+                                            Number(e.target.value),
+                                        )
+                                    }
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-[11px] font-black tracking-widest text-muted-foreground uppercase">
+                                    Tanggal & Catatan
+                                </Label>
+                                <div className="grid gap-2">
+                                    <Input
+                                        type="date"
+                                        value={transferForm.data.transferred_at}
+                                        onChange={(e) =>
+                                            transferForm.setData(
+                                                'transferred_at',
+                                                e.target.value,
+                                            )
+                                        }
+                                        className="h-10 font-bold"
+                                    />
+                                    <Input
+                                        placeholder="Alasan transfer (opsional)"
+                                        value={transferForm.data.note}
+                                        onChange={(e) =>
+                                            transferForm.setData(
+                                                'note',
+                                                e.target.value,
+                                            )
+                                        }
+                                        className="h-10 text-sm font-medium"
+                                    />
+                                </div>
+                            </div>
                         </div>
 
                         <DialogFooter>
                             <Button
                                 type="submit"
                                 disabled={transferForm.processing}
-                                className="h-11 w-full text-xs font-black tracking-widest uppercase shadow-lg"
+                                className="h-12 w-full text-xs font-black tracking-[0.2em] uppercase shadow-lg"
                             >
-                                Proses Transfer
+                                Eksekusi Transfer
                             </Button>
                         </DialogFooter>
                     </form>
                 </DialogContent>
             </Dialog>
 
+            {/* MODAL: DELETE */}
             <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
-                <AlertDialogContent>
+                <AlertDialogContent className="rounded-2xl border-none shadow-2xl">
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Hapus dompet ini?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Seluruh data saldo akan terhapus. Pastikan Anda
-                            sudah memindahkan saldo ke dompet lain jika
-                            diperlukan.
+                        <AlertDialogTitle className="text-xl font-black tracking-tight uppercase">
+                            Hapus akun dompet?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="text-sm leading-relaxed font-medium italic opacity-70">
+                            Seluruh histori pada akun ini akan ikut terdampak.
+                            Pastikan Anda sudah memindahkan saldo jika masih ada
+                            sisa dana.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Batal</AlertDialogCancel>
+                    <AlertDialogFooter className="mt-4">
+                        <AlertDialogCancel className="h-10 px-6 text-[10px] font-bold tracking-widest uppercase">
+                            Batal
+                        </AlertDialogCancel>
                         <AlertDialogAction
                             onClick={confirmDelete}
-                            className="bg-red-600 font-bold hover:bg-red-700"
+                            className="h-10 bg-red-600 px-6 text-[10px] font-bold tracking-widest uppercase hover:bg-red-700"
                         >
-                            Hapus
+                            Ya, Hapus Dompet
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
@@ -626,6 +701,8 @@ function getWalletIcon(type: string) {
             return <WalletIcon size={18} />;
         case 'savings':
             return <PiggyBank size={18} />;
+        case 'emergency':
+            return <CheckCircle2 size={18} className="text-emerald-500" />;
         default:
             return <WalletIcon size={18} />;
     }

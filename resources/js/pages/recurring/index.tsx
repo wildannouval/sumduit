@@ -15,7 +15,6 @@ import {
     Card,
     CardContent,
     CardDescription,
-    CardFooter,
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
@@ -27,6 +26,13 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -36,14 +42,24 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
 import { formatIDR } from '@/lib/money';
-import { Head, useForm } from '@inertiajs/react';
+import { type BreadcrumbItem } from '@/types';
+import { Head, router, useForm } from '@inertiajs/react';
 import {
     AlarmClock,
     CalendarClock,
     CheckCircle2,
     Inbox,
+    MoreHorizontal,
     PlusCircle,
     RefreshCcw,
     Trash2,
@@ -51,7 +67,9 @@ import {
 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 
-const breadcrumbs = [{ title: 'Automasi Tagihan', href: '/recurring' }];
+const breadcrumbs: BreadcrumbItem[] = [
+    { title: 'Tagihan Rutin', href: '/recurring' },
+];
 
 export default function RecurringIndex({
     templates = [],
@@ -88,7 +106,7 @@ export default function RecurringIndex({
 
     const handleDelete = () => {
         if (selectedId) {
-            form.delete(`/recurring/${selectedId}`, {
+            router.delete(`/recurring/${selectedId}`, {
                 onSuccess: () => setIsDeleteOpen(false),
             });
         }
@@ -104,15 +122,15 @@ export default function RecurringIndex({
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Tagihan Rutin" />
 
-            <div className="flex flex-col gap-6 p-6">
+            <div className="flex flex-col gap-6 p-6 font-sans">
                 {/* 1. Notifications */}
                 {flash?.success && (
                     <Alert className="border-emerald-200 bg-emerald-50 text-emerald-900 dark:bg-emerald-950/20">
                         <CheckCircle2 className="h-4 w-4 stroke-emerald-600" />
-                        <AlertTitle className="text-xs font-bold tracking-widest uppercase">
-                            Sistem Aktif
+                        <AlertTitle className="text-xs font-black tracking-widest text-emerald-700 uppercase">
+                            Berhasil
                         </AlertTitle>
-                        <AlertDescription className="text-xs">
+                        <AlertDescription className="text-xs font-medium">
                             {flash.success}
                         </AlertDescription>
                     </Alert>
@@ -121,17 +139,17 @@ export default function RecurringIndex({
                 {/* 2. Header Area */}
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <h1 className="flex items-center gap-2 text-2xl font-black tracking-tight uppercase">
-                            <RefreshCcw className="h-6 w-6 text-primary" />{' '}
+                        <h1 className="flex items-center gap-3 text-3xl font-black tracking-tighter uppercase">
+                            <RefreshCcw className="h-8 w-8 text-primary" />{' '}
                             Tagihan Rutin
                         </h1>
-                        <p className="text-xs font-medium tracking-widest text-muted-foreground uppercase">
+                        <p className="mt-1 text-xs font-bold tracking-[0.2em] text-muted-foreground uppercase">
                             Automasi pencatatan transaksi berkala Anda.
                         </p>
                     </div>
                     <Button
                         onClick={() => setIsAddOpen(true)}
-                        className="h-10 px-6 text-xs font-bold tracking-widest uppercase shadow-lg"
+                        className="h-10 px-6 text-xs font-black tracking-widest uppercase shadow-lg transition-transform hover:scale-105"
                     >
                         <PlusCircle className="mr-2 h-4 w-4" /> Tambah Jadwal
                     </Button>
@@ -139,124 +157,174 @@ export default function RecurringIndex({
 
                 {/* 3. Summary Stats */}
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                    <Card className="relative overflow-hidden border-none bg-slate-950 text-white shadow-sm ring-1 ring-border dark:bg-slate-900">
+                    <Card className="relative overflow-hidden border-none bg-slate-950 text-white shadow-xl ring-1 ring-border md:col-span-2 dark:bg-slate-900">
                         <div className="absolute top-[-10px] right-[-10px] rotate-12 opacity-10">
-                            <AlarmClock size={120} />
+                            <AlarmClock size={160} />
                         </div>
                         <CardHeader className="pb-2">
-                            <CardDescription className="text-[10px] font-black tracking-widest text-slate-400 uppercase">
-                                Total Beban Rutin / Bulan
+                            <CardDescription className="text-[10px] font-black tracking-[0.2em] text-slate-400 uppercase">
+                                Estimasi Beban Rutin / Bulan
                             </CardDescription>
-                            <CardTitle className="text-3xl font-black text-primary-foreground italic">
+                            <CardTitle className="text-4xl font-black tracking-tighter text-primary-foreground italic tabular-nums">
                                 {formatIDR(totalMonthlyRecurring)}
                             </CardTitle>
                         </CardHeader>
+                        <CardContent>
+                            <p className="text-xs font-medium tracking-wide text-slate-500 uppercase">
+                                Berdasarkan {templates.length} jadwal aktif
+                            </p>
+                        </CardContent>
                     </Card>
 
                     <Card className="flex flex-col justify-center border-none bg-card px-6 shadow-sm ring-1 ring-border">
                         <CardDescription className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">
-                            Automasi Aktif
+                            Status Sistem
                         </CardDescription>
-                        <div className="mt-1 text-3xl font-black">
+                        <div className="mt-1 flex items-baseline gap-2 text-3xl font-black">
                             {templates.length}{' '}
-                            <span className="text-xs font-bold tracking-tighter text-muted-foreground uppercase">
+                            <span className="text-xs font-bold text-muted-foreground uppercase">
                                 Template
                             </span>
                         </div>
                     </Card>
                 </div>
 
-                {/* 4. Recurring Grid */}
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {templates.length > 0 ? (
-                        templates.map((t: any) => (
-                            <Card
-                                key={t.id}
-                                className="group flex flex-col justify-between overflow-hidden border-none bg-card shadow-sm ring-1 ring-border transition-all hover:ring-primary/50"
-                            >
-                                <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3">
-                                    <div className="flex flex-col gap-1">
-                                        <Badge
-                                            variant="outline"
-                                            className="w-fit border-primary/30 bg-primary/5 text-[9px] font-black tracking-tighter text-primary uppercase"
+                {/* 4. Recurring List (Data Table) */}
+                <Card className="overflow-hidden border-none shadow-sm ring-1 ring-border">
+                    <CardContent className="p-0">
+                        <Table>
+                            <TableHeader className="bg-muted/50">
+                                <TableRow>
+                                    <TableHead className="py-4 text-[11px] font-black tracking-widest text-muted-foreground uppercase">
+                                        Nama Tagihan
+                                    </TableHead>
+                                    <TableHead className="py-4 text-center text-[11px] font-black tracking-widest text-muted-foreground uppercase">
+                                        Frekuensi
+                                    </TableHead>
+                                    <TableHead className="py-4 text-center text-[11px] font-black tracking-widest text-muted-foreground uppercase">
+                                        Next Run
+                                    </TableHead>
+                                    <TableHead className="py-4 text-right text-[11px] font-black tracking-widest text-muted-foreground uppercase">
+                                        Nominal
+                                    </TableHead>
+                                    <TableHead className="py-4 text-right text-[11px] font-black tracking-widest text-muted-foreground uppercase">
+                                        Aksi
+                                    </TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {templates.length > 0 ? (
+                                    templates.map((t: any) => (
+                                        <TableRow
+                                            key={t.id}
+                                            className="group transition-colors hover:bg-muted/30"
                                         >
-                                            {t.frequency === 'monthly'
-                                                ? 'Setiap Bulan'
-                                                : 'Setiap Minggu'}
-                                        </Badge>
-                                        <CardTitle className="mt-1 text-lg font-black tracking-tight uppercase">
-                                            {t.name}
-                                        </CardTitle>
-                                        <CardDescription className="text-[10px] font-bold tracking-widest uppercase">
-                                            {t.category?.name}
-                                        </CardDescription>
-                                    </div>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-8 w-8 text-muted-foreground hover:bg-red-50 hover:text-red-600"
-                                        onClick={() => {
-                                            setSelectedId(t.id);
-                                            setIsDeleteOpen(true);
-                                        }}
-                                    >
-                                        <Trash2 size={16} />
-                                    </Button>
-                                </CardHeader>
-
-                                <CardContent className="pb-4">
-                                    <div className="text-2xl font-black tracking-tighter text-foreground">
-                                        {formatIDR(Number(t.amount))}
-                                    </div>
-                                    <div className="mt-4 flex items-center gap-2 rounded-lg border border-border/50 bg-muted/30 p-2">
-                                        <WalletIcon
-                                            size={14}
-                                            className="text-muted-foreground"
-                                        />
-                                        <span className="text-[11px] font-bold text-muted-foreground uppercase">
-                                            {t.wallet?.name}
-                                        </span>
-                                    </div>
-                                </CardContent>
-
-                                <CardFooter className="flex items-center justify-between border-t bg-muted/20 py-3">
-                                    <div className="flex flex-col">
-                                        <span className="text-[9px] font-black text-muted-foreground uppercase opacity-60">
-                                            Next Run
-                                        </span>
-                                        <div className="flex items-center gap-1 text-xs font-bold text-blue-600">
-                                            <CalendarClock size={12} />{' '}
-                                            {t.next_due_date}
-                                        </div>
-                                    </div>
-                                    {t.last_applied_at && (
-                                        <div className="flex flex-col text-right">
-                                            <span className="text-[9px] font-black text-muted-foreground uppercase opacity-60">
-                                                Terakhir
-                                            </span>
-                                            <span className="text-[10px] font-medium text-muted-foreground">
-                                                {t.last_applied_at}
-                                            </span>
-                                        </div>
-                                    )}
-                                </CardFooter>
-                            </Card>
-                        ))
-                    ) : (
-                        <div className="col-span-full flex flex-col items-center justify-center rounded-2xl border-2 border-dashed bg-muted/10 py-20 text-center">
-                            <Inbox
-                                size={48}
-                                className="mb-4 text-muted-foreground opacity-20"
-                            />
-                            <h3 className="text-sm font-bold tracking-widest text-muted-foreground uppercase">
-                                Belum ada jadwal otomatis
-                            </h3>
-                            <p className="mt-1 text-xs text-muted-foreground">
-                                Gunakan tombol "Tambah Jadwal" untuk memulai.
-                            </p>
-                        </div>
-                    )}
-                </div>
+                                            <TableCell className="py-5">
+                                                <div className="flex flex-col gap-1">
+                                                    <span className="text-sm font-black tracking-tight uppercase">
+                                                        {t.name}
+                                                    </span>
+                                                    <span className="flex items-center gap-1.5 text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
+                                                        <WalletIcon size={12} />{' '}
+                                                        {t.wallet?.name} •{' '}
+                                                        {t.category?.name}
+                                                    </span>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="text-center">
+                                                <Badge
+                                                    variant="outline"
+                                                    className="h-5 border-primary/30 bg-primary/5 px-2 text-[9px] font-black tracking-tighter text-primary uppercase"
+                                                >
+                                                    {t.frequency === 'monthly'
+                                                        ? 'Bulanan'
+                                                        : 'Mingguan'}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell className="text-center">
+                                                <div className="flex flex-col items-center gap-1">
+                                                    <span className="flex items-center gap-1 text-[11px] font-bold text-blue-600">
+                                                        <CalendarClock
+                                                            size={12}
+                                                        />{' '}
+                                                        {t.next_due_date}
+                                                    </span>
+                                                    {t.last_applied_at && (
+                                                        <span className="text-[9px] font-medium text-muted-foreground uppercase">
+                                                            Last:{' '}
+                                                            {t.last_applied_at}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="text-right text-base font-black tabular-nums">
+                                                {formatIDR(Number(t.amount))}
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger
+                                                        asChild
+                                                    >
+                                                        <Button
+                                                            variant="ghost"
+                                                            className="h-8 w-8 p-0 opacity-50 group-hover:opacity-100"
+                                                        >
+                                                            <MoreHorizontal
+                                                                size={16}
+                                                            />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent
+                                                        align="end"
+                                                        className="w-40 rounded-xl border-none shadow-xl ring-1 ring-border"
+                                                    >
+                                                        <DropdownMenuLabel className="text-[10px] font-black tracking-widest uppercase opacity-50">
+                                                            Opsi
+                                                        </DropdownMenuLabel>
+                                                        <DropdownMenuItem
+                                                            onClick={() => {
+                                                                setSelectedId(
+                                                                    t.id,
+                                                                );
+                                                                setIsDeleteOpen(
+                                                                    true,
+                                                                );
+                                                            }}
+                                                            className="cursor-pointer text-xs font-bold text-red-600 uppercase"
+                                                        >
+                                                            <Trash2
+                                                                size={14}
+                                                                className="mr-2"
+                                                            />{' '}
+                                                            Hapus Jadwal
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                ) : (
+                                    <TableRow>
+                                        <TableCell
+                                            colSpan={5}
+                                            className="h-48 text-center"
+                                        >
+                                            <div className="flex flex-col items-center justify-center opacity-30">
+                                                <Inbox
+                                                    size={48}
+                                                    className="mb-2"
+                                                />
+                                                <p className="text-xs font-black tracking-widest text-muted-foreground uppercase">
+                                                    Tidak Ada Jadwal Rutin
+                                                </p>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
             </div>
 
             {/* DIALOG: TAMBAH JADWAL */}
@@ -266,38 +334,43 @@ export default function RecurringIndex({
                     if (!v) setIsAddOpen(false);
                 }}
             >
-                <DialogContent className="sm:max-w-[425px]">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2 text-xl font-black tracking-tighter text-primary uppercase">
-                            <RefreshCcw size={20} /> Jadwal Automasi
+                <DialogContent className="overflow-hidden border-none p-0 shadow-2xl sm:max-w-[425px]">
+                    <DialogHeader className="bg-slate-950 p-8 text-white">
+                        <DialogTitle className="flex items-center gap-2 text-2xl font-black tracking-tighter uppercase">
+                            <RefreshCcw size={24} className="text-primary" />{' '}
+                            Jadwal Automasi
                         </DialogTitle>
-                        <DialogDescription className="text-xs font-medium uppercase">
-                            Transaksi ini akan dicatat otomatis sesuai jadwal.
+                        <DialogDescription className="text-xs font-bold tracking-widest text-slate-400 uppercase opacity-80">
+                            Catat transaksi rutin secara otomatis.
                         </DialogDescription>
                     </DialogHeader>
 
-                    <form onSubmit={submitAdd} className="space-y-4 pt-4">
+                    <form
+                        onSubmit={submitAdd}
+                        className="space-y-6 bg-card p-8 font-sans"
+                    >
                         <div className="space-y-2">
-                            <Label className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">
-                                Nama Automasi
+                            <Label className="text-[11px] font-black tracking-widest text-muted-foreground uppercase">
+                                Nama Tagihan
                             </Label>
                             <Input
-                                placeholder="Contoh: BPJS Kesehatan, WiFi Rumah"
+                                placeholder="Misal: Netflix, Listrik Bulanan"
                                 value={form.data.name}
                                 onChange={(e) =>
                                     form.setData('name', e.target.value)
                                 }
+                                className="font-bold"
                             />
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">
-                                    Nominal
+                                <Label className="text-[11px] font-black tracking-widest text-muted-foreground uppercase">
+                                    Nominal (Rp)
                                 </Label>
                                 <Input
                                     type="number"
-                                    className="font-bold"
+                                    className="h-10 border-2 font-black tabular-nums focus-visible:ring-primary"
                                     value={form.data.amount}
                                     onChange={(e) =>
                                         form.setData(
@@ -308,7 +381,7 @@ export default function RecurringIndex({
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">
+                                <Label className="text-[11px] font-black tracking-widest text-muted-foreground uppercase">
                                     Frekuensi
                                 </Label>
                                 <Select
@@ -317,14 +390,20 @@ export default function RecurringIndex({
                                         form.setData('frequency', v)
                                     }
                                 >
-                                    <SelectTrigger className="font-bold">
+                                    <SelectTrigger className="h-10 text-xs font-bold text-foreground uppercase">
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="monthly">
+                                        <SelectItem
+                                            value="monthly"
+                                            className="text-xs font-bold tracking-tighter uppercase"
+                                        >
                                             Bulanan
                                         </SelectItem>
-                                        <SelectItem value="weekly">
+                                        <SelectItem
+                                            value="weekly"
+                                            className="text-xs font-bold tracking-tighter uppercase"
+                                        >
                                             Mingguan
                                         </SelectItem>
                                     </SelectContent>
@@ -334,7 +413,7 @@ export default function RecurringIndex({
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">
+                                <Label className="text-[11px] font-black tracking-widest text-muted-foreground uppercase">
                                     Kategori
                                 </Label>
                                 <Select
@@ -343,7 +422,7 @@ export default function RecurringIndex({
                                         form.setData('category_id', Number(v))
                                     }
                                 >
-                                    <SelectTrigger className="font-bold">
+                                    <SelectTrigger className="h-10 text-xs font-bold uppercase">
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -351,6 +430,7 @@ export default function RecurringIndex({
                                             <SelectItem
                                                 key={c.id}
                                                 value={String(c.id)}
+                                                className="text-xs font-bold uppercase"
                                             >
                                                 {c.name}
                                             </SelectItem>
@@ -359,8 +439,8 @@ export default function RecurringIndex({
                                 </Select>
                             </div>
                             <div className="space-y-2">
-                                <Label className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">
-                                    Dompet Sumber
+                                <Label className="text-[11px] font-black tracking-widest text-muted-foreground uppercase">
+                                    Dompet
                                 </Label>
                                 <Select
                                     value={String(form.data.wallet_id)}
@@ -368,7 +448,7 @@ export default function RecurringIndex({
                                         form.setData('wallet_id', Number(v))
                                     }
                                 >
-                                    <SelectTrigger className="font-bold">
+                                    <SelectTrigger className="h-10 text-xs font-bold uppercase">
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -376,6 +456,7 @@ export default function RecurringIndex({
                                             <SelectItem
                                                 key={w.id}
                                                 value={String(w.id)}
+                                                className="text-xs font-bold uppercase"
                                             >
                                                 {w.name}
                                             </SelectItem>
@@ -386,13 +467,13 @@ export default function RecurringIndex({
                         </div>
 
                         <div className="space-y-2 rounded-lg border border-blue-100 bg-blue-50/50 p-3 dark:border-blue-900/30 dark:bg-blue-900/10">
-                            <Label className="flex items-center gap-2 text-[10px] font-black text-blue-600 uppercase dark:text-blue-400">
+                            <Label className="flex items-center gap-2 text-[10px] font-black tracking-widest text-blue-600 uppercase dark:text-blue-400">
                                 <CalendarClock size={12} /> Mulai Automasi
                                 Tanggal
                             </Label>
                             <Input
                                 type="date"
-                                className="mt-1 bg-background"
+                                className="mt-1 h-10 bg-background font-bold"
                                 value={form.data.next_due_date}
                                 onChange={(e) =>
                                     form.setData(
@@ -407,11 +488,9 @@ export default function RecurringIndex({
                             <Button
                                 type="submit"
                                 disabled={form.processing}
-                                className="h-11 w-full text-xs font-black tracking-widest uppercase"
+                                className="h-12 w-full text-xs font-black tracking-[0.2em] uppercase shadow-lg transition-transform hover:scale-[1.02]"
                             >
-                                {form.processing
-                                    ? 'Sedang Memproses...'
-                                    : 'Aktifkan Automasi'}
+                                Aktifkan Automasi
                             </Button>
                         </DialogFooter>
                     </form>
@@ -425,25 +504,25 @@ export default function RecurringIndex({
                     if (!v) setIsDeleteOpen(false);
                 }}
             >
-                <AlertDialogContent>
+                <AlertDialogContent className="rounded-2xl border-none shadow-2xl">
                     <AlertDialogHeader>
-                        <AlertDialogTitle className="font-black tracking-tighter uppercase">
-                            Hapus jadwal automasi?
+                        <AlertDialogTitle className="text-xl font-black tracking-tight uppercase">
+                            Berhenti automasi?
                         </AlertDialogTitle>
-                        <AlertDialogDescription className="text-sm">
-                            Tagihan ini tidak akan lagi dicatatkan secara
-                            otomatis ke Arus Kas Anda mulai periode berikutnya.
+                        <AlertDialogDescription className="text-sm leading-relaxed font-medium italic opacity-70">
+                            Tagihan ini tidak akan lagi dicatat secara otomatis
+                            ke Arus Kas Anda.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel className="text-xs font-bold tracking-widest uppercase">
+                    <AlertDialogFooter className="mt-4">
+                        <AlertDialogCancel className="h-10 px-6 text-[10px] font-bold tracking-widest uppercase">
                             Batal
                         </AlertDialogCancel>
                         <AlertDialogAction
                             onClick={handleDelete}
-                            className="bg-red-600 text-xs font-bold tracking-widest uppercase hover:bg-red-700"
+                            className="h-10 bg-red-600 px-6 text-[10px] font-bold tracking-widest uppercase hover:bg-red-700"
                         >
-                            Ya, Berhenti
+                            Ya, Hapus Jadwal
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

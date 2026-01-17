@@ -18,7 +18,6 @@ class BudgetController extends Controller
         $month = (string) $request->query('month', now()->format('Y-m'));
         $search = $request->query('search', '');
 
-        // Query Budget dengan kalkulasi pengeluaran per kategori
         $budgetsQuery = Budget::query()
             ->where('user_id', $userId)
             ->where('month', $month)
@@ -29,7 +28,6 @@ class BudgetController extends Controller
         }
 
         $budgets = $budgetsQuery->get()->map(function ($budget) use ($userId, $month) {
-            // Hitung pengeluaran untuk kategori ini di bulan ini
             $spent = Transaction::where('user_id', $userId)
                 ->where('category_id', $budget->category_id)
                 ->whereRaw("DATE_FORMAT(occurred_at, '%Y-%m') = ?", [$month])
@@ -41,7 +39,6 @@ class BudgetController extends Controller
             return $budget;
         });
 
-        // Ringkasan Total
         $totalBudget = $budgets->sum('amount');
         $totalSpent = $budgets->sum('spent');
 
@@ -75,7 +72,6 @@ class BudgetController extends Controller
             'notes' => ['nullable', 'string', 'max:255'],
         ]);
 
-        // Ambil group dari kategori secara otomatis
         $category = Category::findOrFail($data['category_id']);
 
         Budget::create([

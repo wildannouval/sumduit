@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Budget extends Model
 {
@@ -15,6 +16,12 @@ class Budget extends Model
     ];
 
     protected $casts = [
-        'amount' => 'decimal:2',
+        'amount' => 'float',
     ];
+
+    // FIX: Menambahkan relasi ke model Category
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(Category::class);
+    }
 }

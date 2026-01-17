@@ -72,7 +72,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarHeader>
                 <SidebarMenu>
                     <SidebarMenuItem>
-                        <div className="flex p-2">
+                        {/* Wrapper logo disesuaikan agar rapi saat collapsed/expanded */}
+                        <div className="flex items-center justify-start p-2 group-data-[collapsible=icon]:justify-center">
                             <AppLogo />
                         </div>
                     </SidebarMenuItem>

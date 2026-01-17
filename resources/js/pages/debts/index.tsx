@@ -55,9 +55,10 @@ import {
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AppLayout from '@/layouts/app-layout';
 import { formatIDR } from '@/lib/money';
+import { type BreadcrumbItem } from '@/types';
 import { Head, router, useForm } from '@inertiajs/react';
 import {
-    Calendar, // Tambahkan ini untuk memperbaiki error "Calendar is not defined"
+    Calendar,
     CheckCircle2,
     HandCoins,
     History,
@@ -70,7 +71,9 @@ import {
 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 
-const breadcrumbs = [{ title: 'Hutang & Piutang', href: '/debts' }];
+const breadcrumbs: BreadcrumbItem[] = [
+    { title: 'Hutang & Piutang', href: '/debts' },
+];
 
 export default function DebtIndex({ debts = [], wallets = [], flash }: any) {
     const [isAddOpen, setIsAddOpen] = useState(false);
@@ -109,11 +112,7 @@ export default function DebtIndex({ debts = [], wallets = [], flash }: any) {
 
     const submitAdd = (e: React.FormEvent) => {
         e.preventDefault();
-        addForm.post('/debts', {
-            onSuccess: () => {
-                setIsAddOpen(false);
-            },
-        });
+        addForm.post('/debts', { onSuccess: () => setIsAddOpen(false) });
     };
 
     const submitPay = (e: React.FormEvent) => {
@@ -131,7 +130,7 @@ export default function DebtIndex({ debts = [], wallets = [], flash }: any) {
         });
     };
 
-    // --- Filter Logic ---
+    // Filter Logic
     const filteredDebts = debts.filter((d: any) => {
         const matchesSearch = d.person_name
             .toLowerCase()
@@ -151,34 +150,34 @@ export default function DebtIndex({ debts = [], wallets = [], flash }: any) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Hutang & Piutang" />
 
-            <div className="flex flex-col gap-6 p-6">
+            <div className="flex flex-col gap-6 p-6 font-sans">
                 {/* 1. Notifications */}
                 {flash?.success && (
                     <Alert className="border-emerald-200 bg-emerald-50 text-emerald-900 dark:bg-emerald-950/20">
                         <CheckCircle2 className="h-4 w-4 stroke-emerald-600" />
-                        <AlertTitle className="text-xs font-bold tracking-widest uppercase">
+                        <AlertTitle className="text-xs font-black tracking-widest text-emerald-700 uppercase">
                             Berhasil
                         </AlertTitle>
-                        <AlertDescription className="text-xs">
+                        <AlertDescription className="text-xs font-medium">
                             {flash.success}
                         </AlertDescription>
                     </Alert>
                 )}
 
-                {/* 2. Header */}
+                {/* 2. Header Area */}
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <h1 className="flex items-center gap-2 text-2xl font-black tracking-tight uppercase">
-                            <HandCoins className="h-6 w-6 text-primary" />{' '}
+                        <h1 className="flex items-center gap-3 text-3xl font-black tracking-tighter uppercase">
+                            <HandCoins className="h-8 w-8 text-primary" />{' '}
                             Pinjaman
                         </h1>
-                        <p className="text-xs font-medium tracking-widest text-muted-foreground uppercase">
-                            Lacak kewajiban dan tagihan Anda.
+                        <p className="mt-1 text-xs font-bold tracking-[0.2em] text-muted-foreground uppercase">
+                            Kelola kewajiban dan tagihan piutang Anda.
                         </p>
                     </div>
                     <Button
                         onClick={() => setIsAddOpen(true)}
-                        className="h-10 px-6 text-xs font-bold tracking-widest uppercase shadow-lg"
+                        className="h-10 px-6 text-xs font-black tracking-widest uppercase shadow-lg transition-transform hover:scale-105"
                     >
                         <PlusCircle className="mr-2 h-4 w-4" /> Catat Baru
                     </Button>
@@ -187,374 +186,303 @@ export default function DebtIndex({ debts = [], wallets = [], flash }: any) {
                 {/* 3. Summary Section */}
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <Card className="relative overflow-hidden border-none bg-red-50 shadow-sm ring-1 ring-red-100 dark:bg-red-950/10 dark:ring-red-900/30">
-                        <CardHeader className="pb-2">
-                            <CardDescription className="text-[10px] font-black tracking-widest text-red-600 uppercase opacity-70 dark:text-red-400">
+                        <CardHeader className="pb-4">
+                            <CardDescription className="text-[10px] font-black tracking-widest text-red-600 uppercase dark:text-red-400">
                                 Total Hutang (Kewajiban Saya)
                             </CardDescription>
-                            <CardTitle className="text-3xl font-black text-red-700 dark:text-red-300">
+                            <CardTitle className="text-3xl font-black text-red-700 tabular-nums dark:text-red-300">
                                 {formatIDR(totalDebt)}
                             </CardTitle>
                         </CardHeader>
                     </Card>
                     <Card className="relative overflow-hidden border-none bg-blue-50 shadow-sm ring-1 ring-blue-100 dark:bg-blue-950/10 dark:ring-blue-900/30">
-                        <CardHeader className="pb-2">
-                            <CardDescription className="text-[10px] font-black tracking-widest text-blue-600 uppercase opacity-70 dark:text-blue-400">
+                        <CardHeader className="pb-4">
+                            <CardDescription className="text-[10px] font-black tracking-widest text-blue-600 uppercase dark:text-blue-400">
                                 Total Piutang (Tagihan Ke Orang)
                             </CardDescription>
-                            <CardTitle className="text-3xl font-black text-blue-700 dark:text-blue-300">
+                            <CardTitle className="text-3xl font-black text-blue-700 tabular-nums dark:text-blue-300">
                                 {formatIDR(totalCredit)}
                             </CardTitle>
                         </CardHeader>
                     </Card>
                 </div>
 
-                {/* 4. Filter Toolbar */}
-                <Tabs
-                    defaultValue="all"
-                    className="w-full"
-                    onValueChange={setActiveTab}
-                >
-                    <div className="mb-4 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                        <TabsList className="grid w-full grid-cols-3 md:w-[400px]">
+                {/* 4. Toolbar */}
+                <div className="flex flex-col items-center justify-between gap-4 rounded-xl border-b bg-muted/20 p-4 ring-1 ring-border md:flex-row">
+                    <Tabs
+                        defaultValue="all"
+                        className="w-full md:w-auto"
+                        onValueChange={setActiveTab}
+                    >
+                        <TabsList className="h-9 border bg-background">
                             <TabsTrigger
                                 value="all"
-                                className="text-xs font-bold tracking-tighter uppercase"
+                                className="px-4 text-[10px] font-black uppercase"
                             >
                                 Semua
                             </TabsTrigger>
                             <TabsTrigger
                                 value="debt"
-                                className="text-xs font-bold tracking-tighter uppercase"
+                                className="px-4 text-[10px] font-black text-red-600 uppercase"
                             >
                                 Hutang
                             </TabsTrigger>
                             <TabsTrigger
                                 value="credit"
-                                className="text-xs font-bold tracking-tighter uppercase"
+                                className="px-4 text-[10px] font-black text-blue-600 uppercase"
                             >
                                 Piutang
                             </TabsTrigger>
                         </TabsList>
-
-                        <div className="relative w-full md:w-[300px]">
-                            <Search className="absolute top-2.5 left-3 h-4 w-4 text-muted-foreground" />
-                            <Input
-                                placeholder="Cari nama orang..."
-                                className="h-9 bg-background pl-9 text-xs"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
-                        </div>
+                    </Tabs>
+                    <div className="relative w-full md:w-[300px]">
+                        <Search className="absolute top-2.5 left-3 h-4 w-4 text-muted-foreground opacity-50" />
+                        <Input
+                            placeholder="Cari nama orang..."
+                            className="h-9 border-muted bg-background pl-10 text-sm font-medium focus-visible:ring-primary"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
                     </div>
+                </div>
 
-                    {/* 5. Table Card */}
-                    <Card className="overflow-hidden border-none shadow-sm ring-1 ring-border">
-                        <CardContent className="p-0">
-                            <Table>
-                                <TableHeader className="bg-muted/50 text-[10px] font-black tracking-widest uppercase">
-                                    <TableRow>
-                                        <TableHead className="px-4 py-3 text-muted-foreground">
-                                            Pihak Terkait
-                                        </TableHead>
-                                        <TableHead className="py-3 text-center text-muted-foreground">
-                                            Jenis
-                                        </TableHead>
-                                        <TableHead className="py-3 text-muted-foreground">
-                                            Progress Pelunasan
-                                        </TableHead>
-                                        <TableHead className="py-3 text-right text-muted-foreground">
-                                            Sisa Tagihan
-                                        </TableHead>
-                                        <TableHead className="py-3 text-right text-muted-foreground">
-                                            Aksi
-                                        </TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {filteredDebts.length > 0 ? (
-                                        filteredDebts.map((d: any) => {
-                                            const paidAmount =
-                                                d.amount - d.remaining_amount;
-                                            const progress =
-                                                (paidAmount / d.amount) * 100;
-                                            return (
-                                                <TableRow
-                                                    key={d.id}
-                                                    className="group transition-colors hover:bg-muted/30"
-                                                >
-                                                    <TableCell className="px-4 py-4">
-                                                        <div className="flex flex-col gap-1">
-                                                            <div className="flex items-center gap-2 text-sm leading-none font-bold">
-                                                                <User
-                                                                    size={12}
-                                                                    className="text-primary opacity-40"
-                                                                />{' '}
-                                                                {d.person_name}
-                                                            </div>
-                                                            <div className="mt-1.5 flex items-center gap-3">
-                                                                <span className="flex items-center gap-1 text-[9px] font-bold tracking-tight text-muted-foreground uppercase">
-                                                                    <Calendar
-                                                                        size={
-                                                                            11
-                                                                        }
-                                                                    />{' '}
-                                                                    JT:{' '}
-                                                                    {d.due_date ||
-                                                                        'N/A'}
-                                                                </span>
-                                                                {d.status ===
-                                                                    'paid' && (
-                                                                    <Badge
-                                                                        variant="outline"
-                                                                        className="h-4 border-emerald-500 bg-emerald-50 px-1 text-[8px] font-black text-emerald-600 uppercase"
-                                                                    >
-                                                                        Lunas
-                                                                    </Badge>
-                                                                )}
-                                                            </div>
+                {/* 5. Data Table */}
+                <Card className="overflow-hidden border-none shadow-sm ring-1 ring-border">
+                    <CardContent className="p-0">
+                        <Table>
+                            <TableHeader className="border-b bg-muted/50">
+                                <TableRow>
+                                    <TableHead className="px-6 py-4 text-[11px] font-black tracking-widest text-muted-foreground uppercase">
+                                        Pihak Terkait
+                                    </TableHead>
+                                    <TableHead className="py-4 text-center text-[11px] font-black tracking-widest text-muted-foreground uppercase">
+                                        Jenis
+                                    </TableHead>
+                                    <TableHead className="py-4 text-[11px] font-black tracking-widest text-muted-foreground uppercase">
+                                        Progress Pelunasan
+                                    </TableHead>
+                                    <TableHead className="py-4 text-right text-[11px] font-black tracking-widest text-muted-foreground uppercase">
+                                        Sisa Tagihan
+                                    </TableHead>
+                                    <TableHead className="px-6 py-4 text-right text-[11px] font-black tracking-widest text-muted-foreground uppercase">
+                                        Aksi
+                                    </TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {filteredDebts.length > 0 ? (
+                                    filteredDebts.map((d: any) => {
+                                        const paidAmount =
+                                            d.amount - d.remaining_amount;
+                                        const progress =
+                                            (paidAmount / d.amount) * 100;
+                                        return (
+                                            <TableRow
+                                                key={d.id}
+                                                className="group transition-colors hover:bg-muted/30"
+                                            >
+                                                <TableCell className="px-6 py-5">
+                                                    <div className="flex flex-col gap-1">
+                                                        <div className="flex items-center gap-2 text-sm font-black tracking-tight uppercase">
+                                                            <User
+                                                                size={14}
+                                                                className="text-primary opacity-40"
+                                                            />{' '}
+                                                            {d.person_name}
                                                         </div>
-                                                    </TableCell>
-                                                    <TableCell className="text-center">
-                                                        <Badge
-                                                            variant={
+                                                        <div className="mt-0.5 flex items-center gap-2">
+                                                            <span className="flex items-center gap-1 text-[10px] font-bold text-muted-foreground uppercase opacity-60">
+                                                                <Calendar
+                                                                    size={11}
+                                                                />{' '}
+                                                                JT:{' '}
+                                                                {d.due_date ||
+                                                                    'N/A'}
+                                                            </span>
+                                                            {d.status ===
+                                                                'paid' && (
+                                                                <Badge className="h-4 border-none bg-emerald-500/20 text-[8px] font-black text-emerald-600 uppercase">
+                                                                    Lunas
+                                                                </Badge>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="text-center">
+                                                    <Badge
+                                                        variant="outline"
+                                                        className={`h-5 border-none px-2 text-[9px] font-black uppercase ${d.type === 'debt' ? 'bg-red-500/10 text-red-600' : 'bg-blue-500/10 text-blue-600'}`}
+                                                    >
+                                                        {d.type === 'debt'
+                                                            ? 'Hutang'
+                                                            : 'Piutang'}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell className="min-w-[200px]">
+                                                    <div className="flex flex-col gap-1.5 px-4">
+                                                        <div className="flex justify-between text-[9px] font-black tracking-tighter uppercase tabular-nums opacity-60">
+                                                            <span>
+                                                                Terbayar:{' '}
+                                                                {formatIDR(
+                                                                    paidAmount,
+                                                                )}
+                                                            </span>
+                                                            <span>
+                                                                {Math.round(
+                                                                    progress,
+                                                                )}
+                                                                %
+                                                            </span>
+                                                        </div>
+                                                        <Progress
+                                                            value={progress}
+                                                            className="h-1.5"
+                                                            indicatorClassName={
                                                                 d.type ===
                                                                 'debt'
-                                                                    ? 'destructive'
-                                                                    : 'outline'
+                                                                    ? 'bg-red-500'
+                                                                    : 'bg-blue-500'
                                                             }
-                                                            className={`h-5 px-2 text-[9px] font-black tracking-tighter uppercase ${d.type === 'credit' ? 'border-blue-500 bg-blue-50 text-blue-600' : ''}`}
+                                                        />
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell
+                                                    className={`text-right text-base font-black tabular-nums ${d.remaining_amount === 0 ? 'text-emerald-600' : 'text-foreground'}`}
+                                                >
+                                                    {d.remaining_amount === 0
+                                                        ? 'LUNAS'
+                                                        : formatIDR(
+                                                              d.remaining_amount,
+                                                          )}
+                                                </TableCell>
+                                                <TableCell className="px-6 text-right">
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger
+                                                            asChild
                                                         >
-                                                            {d.type === 'debt'
-                                                                ? 'Hutang'
-                                                                : 'Piutang'}
-                                                        </Badge>
-                                                    </TableCell>
-                                                    <TableCell className="min-w-[180px]">
-                                                        <div className="flex flex-col gap-1.5">
-                                                            <div className="flex items-center justify-between text-[9px] font-black tracking-tighter uppercase opacity-60">
-                                                                <span>
-                                                                    Terbayar:{' '}
-                                                                    {formatIDR(
-                                                                        paidAmount,
-                                                                    )}
-                                                                </span>
-                                                                <span>
-                                                                    {Math.round(
-                                                                        progress,
-                                                                    )}
-                                                                    %
-                                                                </span>
-                                                            </div>
-                                                            <Progress
-                                                                value={progress}
-                                                                className="h-1.5"
-                                                                indicatorClassName={
-                                                                    d.type ===
-                                                                    'debt'
-                                                                        ? 'bg-red-500'
-                                                                        : 'bg-blue-500'
-                                                                }
-                                                            />
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell
-                                                        className={`text-right font-black ${d.remaining_amount > 0 ? 'text-foreground' : 'text-emerald-600'}`}
-                                                    >
-                                                        {d.remaining_amount ===
-                                                        0
-                                                            ? 'LUNAS'
-                                                            : formatIDR(
-                                                                  d.remaining_amount,
-                                                              )}
-                                                    </TableCell>
-                                                    <TableCell className="px-4 text-right">
-                                                        <DropdownMenu>
-                                                            <DropdownMenuTrigger
-                                                                asChild
+                                                            <Button
+                                                                variant="ghost"
+                                                                className="h-8 w-8 p-0 opacity-50 group-hover:opacity-100"
                                                             >
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    className="h-8 w-8 p-0 opacity-50 group-hover:opacity-100"
-                                                                >
-                                                                    <MoreHorizontal className="h-4 w-4" />
-                                                                </Button>
-                                                            </DropdownMenuTrigger>
-                                                            <DropdownMenuContent align="end">
-                                                                <DropdownMenuLabel className="text-[10px] font-black tracking-widest uppercase">
-                                                                    Pinjaman
-                                                                </DropdownMenuLabel>
-                                                                {d.status ===
-                                                                    'unpaid' && (
-                                                                    <DropdownMenuItem
-                                                                        onClick={() =>
-                                                                            openPay(
-                                                                                d,
-                                                                            )
-                                                                        }
-                                                                        className="font-bold text-primary"
-                                                                    >
-                                                                        <History className="mr-2 h-3.5 w-3.5" />{' '}
-                                                                        Catat
-                                                                        Bayar
-                                                                    </DropdownMenuItem>
-                                                                )}
-                                                                <DropdownMenuSeparator />
+                                                                <MoreHorizontal
+                                                                    size={16}
+                                                                />
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent
+                                                            align="end"
+                                                            className="w-44 rounded-xl border-none shadow-xl ring-1 ring-border"
+                                                        >
+                                                            <DropdownMenuLabel className="px-3 py-2 text-[10px] font-black tracking-widest uppercase opacity-50">
+                                                                Manajemen
+                                                                Pinjaman
+                                                            </DropdownMenuLabel>
+                                                            {d.status ===
+                                                                'unpaid' && (
                                                                 <DropdownMenuItem
-                                                                    className="font-medium text-red-600"
-                                                                    onClick={() => {
-                                                                        setSelectedDebt(
+                                                                    onClick={() =>
+                                                                        openPay(
                                                                             d,
-                                                                        );
-                                                                        setIsDeleteOpen(
-                                                                            true,
-                                                                        );
-                                                                    }}
+                                                                        )
+                                                                    }
+                                                                    className="cursor-pointer text-xs font-bold text-primary uppercase"
                                                                 >
-                                                                    <Trash2 className="mr-2 h-3.5 w-3.5" />{' '}
-                                                                    Hapus
-                                                                    Catatan
+                                                                    <History
+                                                                        size={
+                                                                            14
+                                                                        }
+                                                                        className="mr-2"
+                                                                    />{' '}
+                                                                    Catat
+                                                                    Cicilan
                                                                 </DropdownMenuItem>
-                                                            </DropdownMenuContent>
-                                                        </DropdownMenu>
-                                                    </TableCell>
-                                                </TableRow>
-                                            );
-                                        })
-                                    ) : (
-                                        <TableRow>
-                                            <TableCell
-                                                colSpan={5}
-                                                className="h-48 text-center text-muted-foreground"
-                                            >
-                                                <div className="flex flex-col items-center justify-center opacity-30">
-                                                    <Inbox
-                                                        size={48}
-                                                        className="mb-2"
-                                                    />
-                                                    <p className="text-sm font-bold tracking-widest uppercase">
-                                                        Tidak ada catatan
-                                                        ditemukan
-                                                    </p>
-                                                </div>
-                                            </TableCell>
-                                        </TableRow>
-                                    )}
-                                </TableBody>
-                            </Table>
-                        </CardContent>
-                    </Card>
-                </Tabs>
+                                                            )}
+                                                            <DropdownMenuSeparator />
+                                                            <DropdownMenuItem
+                                                                onClick={() => {
+                                                                    setSelectedDebt(
+                                                                        d,
+                                                                    );
+                                                                    setIsDeleteOpen(
+                                                                        true,
+                                                                    );
+                                                                }}
+                                                                className="cursor-pointer text-xs font-bold text-red-600 uppercase"
+                                                            >
+                                                                <Trash2
+                                                                    size={14}
+                                                                    className="mr-2"
+                                                                />{' '}
+                                                                Hapus Catatan
+                                                            </DropdownMenuItem>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+                                                </TableCell>
+                                            </TableRow>
+                                        );
+                                    })
+                                ) : (
+                                    <TableRow>
+                                        <TableCell
+                                            colSpan={5}
+                                            className="h-48 text-center"
+                                        >
+                                            <div className="flex flex-col items-center justify-center opacity-30">
+                                                <Inbox
+                                                    size={48}
+                                                    className="mb-2"
+                                                />
+                                                <p className="text-xs font-black tracking-widest text-muted-foreground uppercase">
+                                                    Tidak ada catatan ditemukan
+                                                </p>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
             </div>
 
-            {/* MODAL: CATAT BAYAR */}
-            <Dialog
-                open={isPayOpen}
-                onOpenChange={(v) => {
-                    if (!v) setIsPayOpen(false);
-                }}
-            >
-                <DialogContent className="sm:max-w-[400px]">
-                    <DialogHeader>
-                        <DialogTitle className="text-xl font-black tracking-tighter uppercase">
-                            Catat Pembayaran
+            {/* MODAL: TAMBAH PINJAMAN */}
+            <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+                <DialogContent className="overflow-hidden border-none p-0 shadow-2xl sm:max-w-[450px]">
+                    <DialogHeader className="bg-slate-950 p-8 text-white">
+                        <DialogTitle className="flex items-center gap-2 text-2xl font-black tracking-tighter uppercase">
+                            <PlusCircle size={24} className="text-primary" />{' '}
+                            Catat Pinjaman
                         </DialogTitle>
-                        <DialogDescription className="text-xs font-medium tracking-tight uppercase">
-                            Cicilan untuk: {selectedDebt?.person_name}
+                        <DialogDescription className="text-xs font-bold tracking-widest text-slate-400 uppercase opacity-80">
+                            Catat kewajiban atau tagihan piutang baru.
                         </DialogDescription>
                     </DialogHeader>
-                    <form onSubmit={submitPay} className="space-y-4 pt-4">
-                        <div className="space-y-2">
-                            <Label className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">
-                                Nominal Bayar (Rp)
-                            </Label>
-                            <Input
-                                type="number"
-                                className="h-12 text-lg font-black"
-                                value={payForm.data.amount}
-                                onChange={(e) =>
-                                    payForm.setData(
-                                        'amount',
-                                        Number(e.target.value),
-                                    )
-                                }
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">
-                                Gunakan Sumber Dana
-                            </Label>
-                            <Select
-                                value={String(payForm.data.wallet_id)}
-                                onValueChange={(v) =>
-                                    payForm.setData('wallet_id', Number(v))
-                                }
-                            >
-                                <SelectTrigger className="h-11 font-bold">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {wallets.map((w: any) => (
-                                        <SelectItem
-                                            key={w.id}
-                                            value={String(w.id)}
-                                        >
-                                            {w.name} ({formatIDR(w.balance)})
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <DialogFooter className="pt-2">
-                            <Button
-                                type="submit"
-                                disabled={payForm.processing}
-                                className="h-12 w-full text-xs font-black tracking-widest uppercase"
-                            >
-                                Konfirmasi Pembayaran
-                            </Button>
-                        </DialogFooter>
-                    </form>
-                </DialogContent>
-            </Dialog>
 
-            {/* MODAL: TAMBAH CATATAN */}
-            <Dialog
-                open={isAddOpen}
-                onOpenChange={(v) => {
-                    if (!v) setIsAddOpen(false);
-                }}
-            >
-                <DialogContent className="sm:max-w-[400px]">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2 text-xl font-black tracking-tighter uppercase">
-                            <PlusCircle className="h-5 w-5 text-primary" />{' '}
-                            Catat Pinjaman Baru
-                        </DialogTitle>
-                    </DialogHeader>
-                    <form onSubmit={submitAdd} className="space-y-4 pt-2">
-                        <div className="grid grid-cols-2 gap-2 rounded-lg bg-muted p-1">
+                    <form
+                        onSubmit={submitAdd}
+                        className="space-y-6 bg-card p-8"
+                    >
+                        <div className="grid grid-cols-2 gap-2 rounded-xl bg-muted p-1">
                             <Button
                                 type="button"
-                                size="sm"
                                 variant={
                                     addForm.data.type === 'debt'
                                         ? 'destructive'
                                         : 'ghost'
                                 }
-                                className="h-8 w-full text-[10px] font-black uppercase"
+                                className="h-9 text-[10px] font-black uppercase"
                                 onClick={() => addForm.setData('type', 'debt')}
                             >
                                 Hutang Saya
                             </Button>
                             <Button
                                 type="button"
-                                size="sm"
                                 variant={
                                     addForm.data.type === 'credit'
                                         ? 'default'
                                         : 'ghost'
                                 }
-                                className={`h-8 w-full text-[10px] font-black uppercase ${addForm.data.type === 'credit' ? 'bg-blue-600 hover:bg-blue-700' : ''}`}
+                                className={`h-9 text-[10px] font-black uppercase ${addForm.data.type === 'credit' ? 'bg-blue-600 hover:bg-blue-700' : ''}`}
                                 onClick={() =>
                                     addForm.setData('type', 'credit')
                                 }
@@ -562,71 +490,77 @@ export default function DebtIndex({ debts = [], wallets = [], flash }: any) {
                                 Piutang Saya
                             </Button>
                         </div>
-                        <div className="space-y-2">
-                            <Label className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">
-                                Nama Pihak Terkait
-                            </Label>
-                            <Input
-                                placeholder="Nama orang atau instansi"
-                                value={addForm.data.person_name}
-                                onChange={(e) =>
-                                    addForm.setData(
-                                        'person_name',
-                                        e.target.value,
-                                    )
-                                }
-                            />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
+
+                        <div className="space-y-4">
                             <div className="space-y-2">
-                                <Label className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">
-                                    Total Nominal
+                                <Label className="text-[11px] font-black tracking-widest text-muted-foreground uppercase">
+                                    Nama Pihak Terkait
                                 </Label>
                                 <Input
-                                    type="number"
-                                    className="font-bold"
-                                    value={addForm.data.amount}
+                                    placeholder="Nama orang atau instansi"
+                                    value={addForm.data.person_name}
                                     onChange={(e) =>
                                         addForm.setData(
-                                            'amount',
-                                            Number(e.target.value),
-                                        )
-                                    }
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">
-                                    Jatuh Tempo
-                                </Label>
-                                <Input
-                                    type="date"
-                                    value={addForm.data.due_date}
-                                    onChange={(e) =>
-                                        addForm.setData(
-                                            'due_date',
+                                            'person_name',
                                             e.target.value,
                                         )
                                     }
+                                    className="font-bold"
+                                />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label className="text-[11px] font-black tracking-widest text-muted-foreground uppercase">
+                                        Total Nominal
+                                    </Label>
+                                    <Input
+                                        type="number"
+                                        className="h-10 border-2 font-black tabular-nums focus-visible:ring-primary"
+                                        value={addForm.data.amount}
+                                        onChange={(e) =>
+                                            addForm.setData(
+                                                'amount',
+                                                Number(e.target.value),
+                                            )
+                                        }
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-[11px] font-black tracking-widest text-muted-foreground uppercase">
+                                        Jatuh Tempo
+                                    </Label>
+                                    <Input
+                                        type="date"
+                                        value={addForm.data.due_date}
+                                        onChange={(e) =>
+                                            addForm.setData(
+                                                'due_date',
+                                                e.target.value,
+                                            )
+                                        }
+                                        className="font-bold"
+                                    />
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-[11px] font-black tracking-widest text-muted-foreground uppercase">
+                                    Catatan / Keterangan
+                                </Label>
+                                <Input
+                                    placeholder="Misal: Pinjaman untuk modal usaha"
+                                    value={addForm.data.note}
+                                    onChange={(e) =>
+                                        addForm.setData('note', e.target.value)
+                                    }
                                 />
                             </div>
                         </div>
-                        <div className="space-y-2">
-                            <Label className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">
-                                Catatan
-                            </Label>
-                            <Input
-                                placeholder="Tujuan pinjaman..."
-                                value={addForm.data.note}
-                                onChange={(e) =>
-                                    addForm.setData('note', e.target.value)
-                                }
-                            />
-                        </div>
+
                         <DialogFooter className="pt-2">
                             <Button
                                 type="submit"
                                 disabled={addForm.processing}
-                                className="h-12 w-full text-xs font-black tracking-widest uppercase shadow-lg"
+                                className="h-12 w-full text-xs font-black tracking-[0.2em] uppercase shadow-lg"
                             >
                                 Simpan Catatan
                             </Button>
@@ -635,33 +569,107 @@ export default function DebtIndex({ debts = [], wallets = [], flash }: any) {
                 </DialogContent>
             </Dialog>
 
-            {/* ALERT DELETE */}
-            <AlertDialog
-                open={isDeleteOpen}
-                onOpenChange={(v) => {
-                    if (!v) setIsDeleteOpen(false);
-                }}
-            >
-                <AlertDialogContent>
+            {/* MODAL: CATAT CICILAN / PEMBAYARAN */}
+            <Dialog open={isPayOpen} onOpenChange={setIsPayOpen}>
+                <DialogContent className="overflow-hidden border-none p-0 shadow-2xl sm:max-w-[420px]">
+                    <DialogHeader className="bg-slate-950 p-8 text-white">
+                        <DialogTitle className="flex items-center gap-2 text-2xl font-black tracking-tighter uppercase">
+                            <History size={24} className="text-primary" /> Catat
+                            Cicilan
+                        </DialogTitle>
+                        <DialogDescription className="text-xs font-bold tracking-widest text-slate-400 uppercase opacity-80">
+                            Pelunasan untuk: {selectedDebt?.person_name}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <form
+                        onSubmit={submitPay}
+                        className="space-y-6 bg-card p-8"
+                    >
+                        <div className="space-y-2">
+                            <Label className="text-[11px] font-black tracking-widest text-emerald-600 text-muted-foreground uppercase">
+                                Nominal Bayar (Rp)
+                            </Label>
+                            <Input
+                                type="number"
+                                className="h-12 border-2 border-emerald-100 text-xl font-black tabular-nums focus-visible:ring-emerald-500"
+                                value={payForm.data.amount}
+                                onChange={(e) =>
+                                    payForm.setData(
+                                        'amount',
+                                        Number(e.target.value),
+                                    )
+                                }
+                            />
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-60">
+                                Sisa Tagihan:{' '}
+                                {selectedDebt
+                                    ? formatIDR(selectedDebt.remaining_amount)
+                                    : 0}
+                            </p>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label className="text-[11px] font-black tracking-widest text-muted-foreground uppercase">
+                                Gunakan Sumber Dana
+                            </Label>
+                            <Select
+                                value={String(payForm.data.wallet_id)}
+                                onValueChange={(v) =>
+                                    payForm.setData('wallet_id', Number(v))
+                                }
+                            >
+                                <SelectTrigger className="h-11 text-xs font-bold uppercase shadow-sm">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {wallets.map((w: any) => (
+                                        <SelectItem
+                                            key={w.id}
+                                            value={String(w.id)}
+                                            className="text-xs font-bold uppercase"
+                                        >
+                                            {w.name} ({formatIDR(w.balance)})
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <DialogFooter className="pt-2">
+                            <Button
+                                type="submit"
+                                disabled={payForm.processing}
+                                className="h-12 w-full bg-emerald-600 text-xs font-black tracking-[0.2em] uppercase shadow-lg hover:bg-emerald-700"
+                            >
+                                Konfirmasi Pembayaran
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+
+            {/* MODAL: DELETE */}
+            <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+                <AlertDialogContent className="rounded-2xl border-none shadow-2xl">
                     <AlertDialogHeader>
-                        <AlertDialogTitle className="font-black tracking-tighter uppercase">
+                        <AlertDialogTitle className="text-xl font-black tracking-tight uppercase">
                             Hapus catatan ini?
                         </AlertDialogTitle>
-                        <AlertDialogDescription className="text-sm">
-                            Data pinjaman ini akan dihapus secara permanen.
-                            Pastikan Anda sudah mencatat histori transaksinya
-                            jika perlu.
+                        <AlertDialogDescription className="text-sm leading-relaxed font-medium italic opacity-70">
+                            Data pinjaman akan dihapus secara permanen. Pastikan
+                            Anda sudah mencatat histori transaksinya jika perlu.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel className="text-xs font-bold tracking-widest uppercase">
+                    <AlertDialogFooter className="mt-4">
+                        <AlertDialogCancel className="h-10 px-6 text-[10px] font-bold tracking-widest text-foreground uppercase">
                             Batal
                         </AlertDialogCancel>
                         <AlertDialogAction
                             onClick={confirmDelete}
-                            className="bg-red-600 text-xs font-bold tracking-widest uppercase hover:bg-red-700"
+                            className="h-10 bg-red-600 px-6 text-[10px] font-bold tracking-widest uppercase hover:bg-red-700"
                         >
-                            Ya, Hapus
+                            Hapus Permanen
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
