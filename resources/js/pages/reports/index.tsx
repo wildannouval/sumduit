@@ -1,29 +1,60 @@
+import { Button } from '@/components/ui/button';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
+import {
+    ChartConfig,
+    ChartContainer,
+    ChartTooltip,
+    ChartTooltipContent,
+} from '@/components/ui/chart';
+import { Input } from '@/components/ui/input';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
 import { formatIDR } from '@/lib/money';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
-
-// Shadcn UI Components & Icons
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
+    ArrowDownCircle,
+    ArrowUpCircle,
     CalendarSearch,
-    PieChart,
-    ReceiptText,
+    FileText,
+    History,
+    Inbox,
+    ShieldAlert,
     ShieldCheck,
-    TrendingDown,
+    ShieldQuestion,
     TrendingUp,
     Zap,
 } from 'lucide-react';
+import { Area, AreaChart, CartesianGrid, XAxis } from 'recharts';
 
-const breadcrumbs: BreadcrumbItem[] = [{ title: 'Reports', href: '/reports' }];
+const breadcrumbs: BreadcrumbItem[] = [
+    { title: 'Laporan Analisis', href: '/reports' },
+];
+
+const chartConfig = {
+    income: { label: 'Pemasukan', color: '#10b981' },
+    expense: { label: 'Pengeluaran', color: '#ef4444' },
+} satisfies ChartConfig;
 
 export default function ReportIndex({
     period,
     summary,
-    health,
-    insights,
+    dailyData,
     topCategories,
+    insights,
     transactions,
 }: any) {
     const monthStr = `${period.year}-${String(period.month).padStart(2, '0')}`;
@@ -32,238 +63,341 @@ export default function ReportIndex({
         router.get('/reports', { ...period, ...next }, { preserveState: true });
     }
 
-    function getLevelStyle(level: string) {
-        if (level === 'good')
-            return 'bg-emerald-500/10 text-emerald-700 border-emerald-200';
-        if (level === 'warn')
-            return 'bg-amber-500/10 text-amber-700 border-amber-200';
-        return 'bg-red-500/10 text-red-700 border-red-200';
-    }
-
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Laporan Analisis" />
+            <Head title="Analisis Finansial" />
 
             <div className="flex flex-col gap-6 p-6">
-                {/* Header & Filter */}
-                <div className="flex flex-wrap items-center justify-between gap-4">
+                {/* --- HEADER & PERIOD SELECTOR --- */}
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <h1 className="text-2xl font-black tracking-tight uppercase">
+                        <h1 className="flex items-center gap-2 text-2xl font-black tracking-tight uppercase">
+                            <FileText className="h-6 w-6 text-primary" />{' '}
                             Analisis Finansial
                         </h1>
-                        <p className="flex items-center gap-1 text-sm text-muted-foreground">
-                            <CalendarSearch className="h-3 w-3" /> Rekapitulasi
-                            Data Periode {monthStr}
+                        <p className="text-xs font-medium tracking-widest text-muted-foreground uppercase">
+                            Laporan mendalam performa keuangan Anda.
                         </p>
                     </div>
-                    <div className="flex gap-2 rounded-xl border bg-muted/50 p-2 shadow-sm">
+
+                    <div className="flex items-center gap-2 rounded-xl border bg-muted/50 p-1.5 shadow-sm">
                         <Input
                             type="number"
-                            className="h-8 w-16 border-none bg-transparent font-bold"
+                            className="h-8 w-14 border-none bg-transparent p-0 text-center font-black"
                             value={period.month}
                             onChange={(e) =>
                                 applyPeriod({ month: e.target.value })
                             }
                         />
+                        <span className="text-muted-foreground opacity-30">
+                            /
+                        </span>
                         <Input
                             type="number"
-                            className="h-8 w-24 border-none bg-transparent font-bold"
+                            className="h-8 w-20 border-none bg-transparent p-0 text-center font-black"
                             value={period.year}
                             onChange={(e) =>
                                 applyPeriod({ year: e.target.value })
                             }
                         />
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                        >
+                            <CalendarSearch size={16} />
+                        </Button>
                     </div>
                 </div>
 
-                {/* Summary Cards */}
+                {/* --- SUMMARY STATS --- */}
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-                    <CardStat
+                    <ReportStatCard
                         label="Total Pemasukan"
                         value={summary.income}
-                        icon={<TrendingUp className="h-4 w-4" />}
+                        icon={<ArrowUpCircle className="text-emerald-500" />}
                         color="text-emerald-600"
                     />
-                    <CardStat
+                    <ReportStatCard
                         label="Total Pengeluaran"
                         value={summary.expense}
-                        icon={<TrendingDown className="h-4 w-4" />}
+                        icon={<ArrowDownCircle className="text-red-500" />}
                         color="text-red-600"
                     />
-                    <CardStat
+                    <ReportStatCard
                         label="Arus Kas Bersih"
                         value={summary.net}
-                        icon={<Zap className="h-4 w-4" />}
+                        icon={<Zap className="text-blue-500" />}
                         color={
                             summary.net >= 0 ? 'text-blue-600' : 'text-red-700'
                         }
                     />
-                    <div className="flex flex-col items-center justify-center rounded-2xl border bg-slate-900 p-5 text-white shadow-xl">
-                        <span className="text-[10px] font-bold tracking-widest uppercase opacity-50">
-                            Financial Score
-                        </span>
-                        <div className="mt-1 text-3xl font-black">
-                            {health.total_score}%
+                    <Card className="relative overflow-hidden border-none bg-slate-950 text-white shadow-xl dark:bg-slate-900">
+                        <CardHeader className="p-4 pb-0">
+                            <CardDescription className="text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                                Savings Rate
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="p-4 pt-1">
+                            <div className="text-3xl font-black">
+                                {summary.savings_rate}%
+                            </div>
+                            <p className="mt-1 text-[9px] font-bold text-slate-500 uppercase">
+                                Efisiensi Menabung
+                            </p>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                {/* --- ANALYTICS GRID --- */}
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+                    {/* Daily Trend Chart */}
+                    <Card className="overflow-hidden border-none shadow-sm ring-1 ring-border lg:col-span-2">
+                        <CardHeader className="border-b bg-muted/20 pb-4">
+                            <CardTitle className="flex items-center gap-2 text-sm font-black tracking-tighter uppercase">
+                                <TrendingUp
+                                    size={16}
+                                    className="text-primary"
+                                />{' '}
+                                Tren Arus Kas Harian
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="pt-6">
+                            <ChartContainer
+                                config={chartConfig}
+                                className="h-[250px] w-full"
+                            >
+                                <AreaChart data={dailyData}>
+                                    <defs>
+                                        <linearGradient
+                                            id="colorIn"
+                                            x1="0"
+                                            y1="0"
+                                            x2="0"
+                                            y2="1"
+                                        >
+                                            <stop
+                                                offset="5%"
+                                                stopColor="#10b981"
+                                                stopOpacity={0.3}
+                                            />
+                                            <stop
+                                                offset="95%"
+                                                stopColor="#10b981"
+                                                stopOpacity={0}
+                                            />
+                                        </linearGradient>
+                                        <linearGradient
+                                            id="colorOut"
+                                            x1="0"
+                                            y1="0"
+                                            x2="0"
+                                            y2="1"
+                                        >
+                                            <stop
+                                                offset="5%"
+                                                stopColor="#ef4444"
+                                                stopOpacity={0.3}
+                                            />
+                                            <stop
+                                                offset="95%"
+                                                stopColor="#ef4444"
+                                                stopOpacity={0}
+                                            />
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid
+                                        vertical={false}
+                                        strokeDasharray="3 3"
+                                        opacity={0.2}
+                                    />
+                                    <XAxis
+                                        dataKey="day"
+                                        axisLine={false}
+                                        tickLine={false}
+                                        fontSize={10}
+                                        fontWeight="bold"
+                                    />
+                                    <ChartTooltip
+                                        content={<ChartTooltipContent />}
+                                    />
+                                    <Area
+                                        type="monotone"
+                                        dataKey="income"
+                                        stroke="#10b981"
+                                        fill="url(#colorIn)"
+                                        strokeWidth={2}
+                                    />
+                                    <Area
+                                        type="monotone"
+                                        dataKey="expense"
+                                        stroke="#ef4444"
+                                        fill="url(#colorOut)"
+                                        strokeWidth={2}
+                                    />
+                                </AreaChart>
+                            </ChartContainer>
+                        </CardContent>
+                    </Card>
+
+                    {/* Emergency Runway Info */}
+                    <Card className="flex flex-col items-center justify-center border-none p-6 text-center shadow-sm ring-1 ring-border">
+                        <div className="mb-4 flex h-32 w-32 items-center justify-center rounded-full border-8 border-muted p-4">
+                            <div className="text-center">
+                                <div className="text-4xl leading-none font-black">
+                                    {summary.runway_months.toFixed(1)}
+                                </div>
+                                <div className="mt-1 text-[8px] font-bold text-muted-foreground uppercase">
+                                    Bulan Aman
+                                </div>
+                            </div>
                         </div>
-                    </div>
+                        <h3 className="text-sm font-black tracking-tight uppercase">
+                            Emergency Runway
+                        </h3>
+                        <p className="mt-2 text-[10px] leading-relaxed text-muted-foreground uppercase">
+                            Ketahanan dana darurat Anda terhadap rata-rata
+                            pengeluaran bulanan.
+                        </p>
+                    </Card>
                 </div>
 
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-                    <div className="space-y-6 lg:col-span-2">
-                        {/* Automated Insights */}
-                        <div className="rounded-2xl border bg-card p-5 shadow-sm">
-                            <h2 className="mb-4 flex items-center gap-2 text-xs font-bold uppercase opacity-70">
-                                <ShieldCheck className="h-4 w-4" /> Wawasan
-                                Cerdas
-                            </h2>
-                            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                                {insights.map((insight: any, idx: number) => (
+                    {/* Smart Insights */}
+                    <div className="space-y-4">
+                        <h2 className="flex items-center gap-2 px-1 text-xs font-black tracking-[0.2em] text-muted-foreground uppercase">
+                            <ShieldCheck size={14} /> Smart Insights
+                        </h2>
+                        {insights.map((insight: any, idx: number) => (
+                            <Card
+                                key={idx}
+                                className={`overflow-hidden border-none shadow-sm ring-1 ${
+                                    insight.level === 'good'
+                                        ? 'bg-emerald-50 ring-emerald-200 dark:bg-emerald-950/20'
+                                        : insight.level === 'warn'
+                                          ? 'bg-amber-50 ring-amber-200 dark:bg-amber-950/20'
+                                          : 'bg-red-50 ring-red-200 dark:bg-red-950/20'
+                                }`}
+                            >
+                                <CardHeader className="flex flex-row items-center gap-3 space-y-0 p-4 pb-2">
                                     <div
-                                        key={idx}
-                                        className={`rounded-xl border p-4 ${getLevelStyle(insight.level)}`}
+                                        className={`rounded-lg p-1.5 ${
+                                            insight.level === 'good'
+                                                ? 'bg-emerald-500/20 text-emerald-600'
+                                                : insight.level === 'warn'
+                                                  ? 'bg-amber-500/20 text-amber-600'
+                                                  : 'bg-red-500/20 text-red-600'
+                                        }`}
                                     >
-                                        <div className="text-sm font-bold tracking-tight uppercase">
-                                            {insight.title}
-                                        </div>
-                                        <p className="mt-1 text-xs leading-relaxed font-medium opacity-90">
-                                            {insight.body}
-                                        </p>
+                                        {insight.level === 'good' ? (
+                                            <ShieldCheck size={16} />
+                                        ) : insight.level === 'warn' ? (
+                                            <ShieldQuestion size={16} />
+                                        ) : (
+                                            <ShieldAlert size={16} />
+                                        )}
                                     </div>
-                                ))}
-                            </div>
-                        </div>
+                                    <CardTitle className="text-xs font-black tracking-tight uppercase">
+                                        {insight.title}
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="p-4 pt-0">
+                                    <p className="text-xs leading-relaxed font-medium opacity-80">
+                                        {insight.body}
+                                    </p>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
 
-                        {/* Transaction DataTable */}
-                        <div className="overflow-hidden rounded-2xl border bg-card shadow-sm">
-                            <div className="flex items-center gap-2 border-b bg-muted/20 p-4 text-xs font-bold tracking-widest uppercase opacity-70">
-                                <ReceiptText className="h-4 w-4" /> Riwayat
-                                Transaksi Bulan Ini
-                            </div>
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-left text-sm">
-                                    <thead className="border-b bg-muted/10 text-[10px] font-bold text-muted-foreground uppercase">
-                                        <tr>
-                                            <th className="p-4">Tanggal</th>
-                                            <th className="p-4">Kategori</th>
-                                            <th className="p-4 text-right">
-                                                Jumlah
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y">
-                                        {transactions.map((t: any) => (
-                                            <tr
+                    {/* Detailed Transactions */}
+                    <Card className="overflow-hidden border-none shadow-sm ring-1 ring-border lg:col-span-2">
+                        <CardHeader className="flex flex-row items-center justify-between border-b bg-muted/10">
+                            <CardTitle className="flex items-center gap-2 text-sm font-black tracking-tighter uppercase">
+                                <History size={16} className="text-primary" />{' '}
+                                Rincian Transaksi
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-0">
+                            <Table>
+                                <TableHeader className="bg-muted/30 text-[10px] font-black tracking-widest uppercase">
+                                    <TableRow>
+                                        <TableHead className="px-4 py-3">
+                                            Keterangan
+                                        </TableHead>
+                                        <TableHead>Dompet</TableHead>
+                                        <TableHead className="text-right">
+                                            Nominal
+                                        </TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {transactions.length > 0 ? (
+                                        transactions.map((t: any) => (
+                                            <TableRow
                                                 key={t.id}
-                                                className="transition-colors hover:bg-muted/10"
+                                                className="group transition-colors hover:bg-muted/30"
                                             >
-                                                <td className="p-4 font-medium opacity-60">
-                                                    {t.occurred_at}
-                                                </td>
-                                                <td className="p-4">
-                                                    <div className="font-bold">
+                                                <TableCell className="px-4 py-3">
+                                                    <div className="text-sm leading-none font-bold">
                                                         {t.category?.name ||
                                                             'Lainnya'}
                                                     </div>
-                                                    <div className="text-[10px] font-bold tracking-tighter uppercase opacity-50">
-                                                        {t.wallet?.name}
+                                                    <div className="mt-1 text-[10px] font-medium text-muted-foreground uppercase">
+                                                        {t.occurred_at}
                                                     </div>
-                                                </td>
-                                                <td
-                                                    className={`p-4 text-right font-black ${t.type === 'income' ? 'text-emerald-600' : 'text-red-600'}`}
+                                                </TableCell>
+                                                <TableCell className="text-xs font-medium text-muted-foreground uppercase">
+                                                    {t.wallet?.name}
+                                                </TableCell>
+                                                <TableCell
+                                                    className={`text-right font-black ${t.type === 'income' ? 'text-emerald-600' : 'text-red-600'}`}
                                                 >
                                                     {t.type === 'income'
                                                         ? '+'
                                                         : '-'}
                                                     {formatIDR(t.amount)}
-                                                </td>
-                                            </tr>
-                                        ))}
-                                        {transactions.length === 0 && (
-                                            <tr>
-                                                <td
-                                                    colSpan={3}
-                                                    className="p-12 text-center text-muted-foreground italic"
-                                                >
-                                                    Tidak ada transaksi
-                                                    tercatat.
-                                                </td>
-                                            </tr>
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Sidebar: Top Categories & Runway */}
-                    <div className="space-y-6">
-                        <div className="rounded-2xl border bg-card p-5 shadow-sm">
-                            <h2 className="mb-4 flex items-center gap-2 text-xs font-bold uppercase opacity-70">
-                                <PieChart className="h-4 w-4" /> Pengeluaran
-                                Terbesar
-                            </h2>
-                            <div className="space-y-4">
-                                {topCategories.map((c: any, idx: number) => (
-                                    <div
-                                        key={idx}
-                                        className="group flex items-center justify-between"
-                                    >
-                                        <div className="text-sm font-medium transition-colors group-hover:text-red-600">
-                                            {c.name}
-                                        </div>
-                                        <div className="text-sm font-black tracking-tight">
-                                            {formatIDR(c.amount)}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div className="flex flex-col items-center rounded-2xl border bg-slate-100 p-6 shadow-inner dark:bg-slate-800">
-                            <span className="text-center text-[10px] font-black tracking-[0.2em] uppercase opacity-60">
-                                Emergency Runway
-                            </span>
-                            <div className="my-2 text-5xl font-black tracking-tighter text-slate-900 dark:text-white">
-                                {Number(summary.runway_months).toFixed(1)}
-                            </div>
-                            <span className="text-[10px] font-bold uppercase opacity-60">
-                                Bulan Keamanan Finansial
-                            </span>
-                        </div>
-
-                        <div className="grid grid-cols-1 gap-2">
-                            <Button
-                                variant="outline"
-                                className="h-11 w-full rounded-xl font-bold"
-                                onClick={() => router.visit('/transactions')}
-                            >
-                                Buka Arus Kas
-                            </Button>
-                            <Button
-                                variant="outline"
-                                className="h-11 w-full rounded-xl font-bold"
-                                onClick={() => router.visit('/budgets')}
-                            >
-                                Lihat Anggaran
-                            </Button>
-                        </div>
-                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))
+                                    ) : (
+                                        <TableRow>
+                                            <TableCell
+                                                colSpan={3}
+                                                className="h-32 text-center text-muted-foreground italic opacity-30"
+                                            >
+                                                <Inbox
+                                                    size={32}
+                                                    className="mx-auto mb-2"
+                                                />
+                                                Belum ada data transaksi.
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
                 </div>
             </div>
         </AppLayout>
     );
 }
 
-// Sub-komponen Stat Card
-function CardStat({ label, value, icon, color }: any) {
+function ReportStatCard({ label, value, icon, color }: any) {
     return (
-        <div className="rounded-2xl border bg-card p-5 shadow-sm transition-shadow hover:shadow-md">
-            <div className="mb-1 flex items-center gap-2 text-[10px] font-bold tracking-widest text-muted-foreground uppercase opacity-70">
-                {icon} {label}
-            </div>
-            <div className={`truncate text-xl font-black ${color}`}>
-                {formatIDR(value)}
-            </div>
-        </div>
+        <Card className="border-none bg-card shadow-sm ring-1 ring-border">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-1 text-muted-foreground">
+                <CardDescription className="text-[10px] font-black tracking-widest uppercase">
+                    {label}
+                </CardDescription>
+                {icon}
+            </CardHeader>
+            <CardContent className="p-4 pt-0">
+                <div className={`truncate text-xl font-black ${color}`}>
+                    {formatIDR(value)}
+                </div>
+            </CardContent>
+        </Card>
     );
 }

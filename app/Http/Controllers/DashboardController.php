@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Budget;
 use App\Models\Transaction;
 use App\Models\Wallet;
-use App\Models\Category;
+use App\Models\FixedAsset;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -18,26 +18,42 @@ class DashboardController extends Controller
         $userId = Auth::id();
         $today = now()->format('Y-m-d');
         $thisMonth = now()->format('Y-m');
+        $startOfMonth = now()->startOfMonth();
 
-        // 1. Info Hari Ini
+        // 1. Perhitungan Net Worth (Kekayaan Bersih) Saat Ini
+        $totalWalletBalance = (float) Wallet::where('user_id', $userId)->sum('balance');
+        $totalAssetValue = (float) FixedAsset::where('user_id', $userId)->sum('value');
+        $netWorth = $totalWalletBalance + $totalAssetValue;
+
+        // 2. Perhitungan Pertumbuhan (Dibandingkan Awal Bulan)
+        // Hitung berapa kenaikan saldo dari transaksi bulan ini
+        $incomeThisMonth = (float) Transaction::where('user_id', $userId)->where('type', 'income')->where('occurred_at', '>=', $startOfMonth)->sum('amount');
+        $expenseThisMonth = (float) Transaction::where('user_id', $userId)->where('type', 'expense')->where('occurred_at', '>=', $startOfMonth)->sum('amount');
+        $netFlowThisMonth = $incomeThisMonth - $expenseThisMonth;
+
+        // Hitung aset tetap yang baru ditambahkan bulan ini
+        $newAssetsThisMonth = (float) FixedAsset::where('user_id', $userId)->where('created_at', '>=', $startOfMonth)->sum('value');
+
+        // Net Worth Awal Bulan = Net Worth Sekarang - (Arus Kas Bersih + Aset Baru)
+        $prevNetWorth = $netWorth - ($netFlowThisMonth + $newAssetsThisMonth);
+
+        // Hitung Persentase Kenaikan
+        $growthPct = $prevNetWorth > 0 ? (($netWorth - $prevNetWorth) / $prevNetWorth) * 100 : 0;
+
+        // 3. Info Arus Kas Hari Ini
         $incomeToday = (float) Transaction::where('user_id', $userId)->where('type', 'income')->whereDate('occurred_at', $today)->sum('amount');
         $expenseToday = (float) Transaction::where('user_id', $userId)->where('type', 'expense')->whereDate('occurred_at', $today)->sum('amount');
 
-        // Estimasi budget harian (Total budget bulan ini / jumlah hari bulan ini)
-        $totalBudgetMonth = (float) Budget::where('user_id', $userId)->where('month', $thisMonth)->sum('amount');
-        $budgetToday = $totalBudgetMonth > 0 ? $totalBudgetMonth / now()->daysInMonth : 0;
-
-        // 2 & 3. Card Total Bulanan
+        // 4. Info Bulanan & Runway
         $totalIncomeMonth = (float) Transaction::where('user_id', $userId)->where('type', 'income')->whereRaw("DATE_FORMAT(occurred_at, '%Y-%m') = ?", [$thisMonth])->sum('amount');
         $totalExpenseMonth = (float) Transaction::where('user_id', $userId)->where('type', 'expense')->whereRaw("DATE_FORMAT(occurred_at, '%Y-%m') = ?", [$thisMonth])->sum('amount');
 
-        // 4. Runway Dana Darurat
         $emergencyBalance = (float) Wallet::where('user_id', $userId)->where('type', 'emergency')->sum('balance');
         $avgExpense3m = (float) Transaction::where('user_id', $userId)->where('type', 'expense')
             ->whereBetween('occurred_at', [now()->subMonths(3), now()])->sum('amount') / 3;
         $runway = $avgExpense3m > 0 ? ($emergencyBalance / $avgExpense3m) : 0;
 
-        // 5. Pengeluaran Terbesar (Top 5 Kategori)
+        // 5. Top Spending
         $topSpending = Transaction::query()
             ->where('user_id', $userId)
             ->where('type', 'expense')
@@ -53,18 +69,7 @@ class DashboardController extends Controller
                 'amount' => (float) $item->total
             ]);
 
-        // 7. Tagihan Mendatang (Hanya simulasi: ambil goal atau budget yang sisa saldonya besar)
-        $upcomingBills = Budget::where('user_id', $userId)
-            ->where('month', $thisMonth)
-            ->with('category')
-            ->get()
-            ->map(fn($b) => [
-                'name' => $b->category->name ?? 'Budget',
-                'amount' => (float) $b->amount,
-                'group' => $b->group
-            ])->take(3);
-
-        // 8. Transaksi Terbaru
+        // 6. Transaksi Terbaru
         $recentTransactions = Transaction::where('user_id', $userId)
             ->with(['category', 'wallet'])
             ->latest('occurred_at')
@@ -72,8 +77,13 @@ class DashboardController extends Controller
             ->get();
 
         return Inertia::render('dashboard', [
+            'netWorth' => [
+                'total' => $netWorth,
+                'liquid' => $totalWalletBalance,
+                'fixed' => $totalAssetValue,
+                'growth_pct' => round($growthPct, 1),
+            ],
             'statsToday' => [
-                'budget' => $budgetToday,
                 'income' => $incomeToday,
                 'spent' => $expenseToday,
             ],
@@ -84,33 +94,7 @@ class DashboardController extends Controller
             ],
             'runway' => round($runway, 1),
             'topSpending' => $topSpending,
-            'budgetRealization' => [
-                'budgeted' => $totalBudgetMonth,
-                'spent' => $totalExpenseMonth,
-                'pct' => $totalBudgetMonth > 0 ? round(($totalExpenseMonth / $totalBudgetMonth) * 100) : 0
-            ],
-            'upcomingBills' => $upcomingBills,
             'recentTransactions' => $recentTransactions
         ]);
-        $insights = [];
-
-        // Cek jika pengeluaran > 90% dari total budget
-        if ($totalBudgetMonth > 0 && ($totalExpenseMonth / $totalBudgetMonth) > 0.9) {
-            $insights[] = [
-                'title' => 'Budget Kritis!',
-                'body' => 'Pengeluaran Anda sudah mencapai 90% dari budget bulan ini.',
-                'level' => 'bad'
-            ];
-        }
-
-        // Cek saldo dompet cash rendah
-        $lowCash = Wallet::where('user_id', $userId)->where('type', 'cash')->where('balance', '<', 50000)->first();
-        if ($lowCash) {
-            $insights[] = [
-                'title' => 'Saldo Cash Tipis',
-                'body' => 'Uang tunai di dompet ' . $lowCash->name . ' tersisa kurang dari 50rb.',
-                'level' => 'warn'
-            ];
-        }
     }
 }

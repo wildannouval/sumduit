@@ -1,20 +1,3 @@
-import { Link } from '@inertiajs/react';
-import {
-    AlarmClock,
-    BarChart3,
-    BookOpen,
-    Folder,
-    HandCoins,
-    LayoutGrid,
-    Package,
-    PiggyBank,
-    ReceiptText,
-    Tags,
-    Target,
-    Wallet,
-} from 'lucide-react';
-
-import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
 import {
@@ -23,102 +6,88 @@ import {
     SidebarFooter,
     SidebarHeader,
     SidebarMenu,
-    SidebarMenuButton,
     SidebarMenuItem,
+    SidebarRail,
 } from '@/components/ui/sidebar';
-import { type NavItem } from '@/types';
-
+import {
+    BarChart3,
+    HandCoins,
+    LayoutGrid,
+    PiggyBank,
+    ReceiptText,
+} from 'lucide-react';
+import * as React from 'react';
 import AppLogo from './app-logo';
 
-const mainNavItems: NavItem[] = [
-    {
-        title: 'Dashboard',
-        href: '/dashboard',
-        icon: LayoutGrid,
-    },
-    {
-        title: 'Arus Kas',
-        href: '/transactions',
-        icon: ReceiptText,
-    },
-    {
-        title: 'Dompet',
-        href: '/wallets',
-        icon: Wallet,
-    },
-    {
-        title: 'Anggaran',
-        href: '/budgets',
-        icon: PiggyBank,
-    },
-    {
-        title: 'Target',
-        href: '/goals',
-        icon: Target,
-    },
-    {
-        title: 'Aset Tetap',
-        href: '/assets',
-        icon: Package,
-    },
-    {
-        title: 'Hutang & Piutang',
-        href: '/debts',
-        icon: HandCoins,
-    },
-    {
-        title: 'Tagihan Rutin',
-        href: '/recurring',
-        icon: AlarmClock,
-    },
-    {
-        title: 'Laporan',
-        href: '/reports',
-        icon: BarChart3,
-    },
-    {
-        title: 'Kategori',
-        href: '/categories',
-        icon: Tags,
-    },
-];
+const navData = {
+    navMain: [
+        {
+            title: 'Dashboard',
+            href: '/dashboard',
+            icon: LayoutGrid,
+        },
+        {
+            title: 'Keuangan',
+            href: '#',
+            icon: ReceiptText,
+            items: [
+                { title: 'Arus Kas', href: '/transactions' },
+                { title: 'Dompet', href: '/wallets' },
+                { title: 'Tagihan Rutin', href: '/recurring' },
+            ],
+        },
+        {
+            title: 'Perencanaan',
+            href: '#',
+            icon: PiggyBank,
+            items: [
+                { title: 'Anggaran', href: '/budgets' },
+                { title: 'Target Tabungan', href: '/goals' },
+            ],
+        },
+        {
+            title: 'Aset & Pinjaman',
+            href: '#',
+            icon: HandCoins,
+            items: [
+                { title: 'Aset Tetap', href: '/assets' },
+                { title: 'Hutang & Piutang', href: '/debts' },
+            ],
+        },
+        {
+            title: 'Analisis & Data',
+            href: '#',
+            icon: BarChart3,
+            items: [
+                { title: 'Laporan', href: '/reports' },
+                { title: 'Kategori', href: '/categories' },
+            ],
+        },
+    ],
+};
 
-const footerNavItems: NavItem[] = [
-    {
-        title: 'Repository',
-        href: 'https://github.com/laravel/react-starter-kit',
-        icon: Folder,
-    },
-    {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#react',
-        icon: BookOpen,
-    },
-];
-
-export function AppSidebar() {
+export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     return (
-        <Sidebar collapsible="icon" variant="inset">
+        <Sidebar collapsible="icon" variant="inset" {...props}>
             <SidebarHeader>
                 <SidebarMenu>
                     <SidebarMenuItem>
-                        <SidebarMenuButton size="lg" asChild>
-                            <Link href="/dashboard" prefetch>
-                                <AppLogo />
-                            </Link>
-                        </SidebarMenuButton>
+                        <div className="flex p-2">
+                            <AppLogo />
+                        </div>
                     </SidebarMenuItem>
                 </SidebarMenu>
             </SidebarHeader>
 
             <SidebarContent>
-                <NavMain items={mainNavItems} />
+                <NavMain items={navData.navMain} />
             </SidebarContent>
 
             <SidebarFooter>
-                <NavFooter items={footerNavItems} className="mt-auto" />
                 <NavUser />
             </SidebarFooter>
+
+            <SidebarRail />
         </Sidebar>
     );
 }

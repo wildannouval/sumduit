@@ -12,6 +12,7 @@ return new class extends Migration {
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->string('name');
             $table->decimal('value', 15, 2);
+            $table->string('category')->nullable(); // <-- Tambahkan baris ini
             $table->date('purchased_at')->nullable();
             $table->string('note')->nullable();
             $table->timestamps();

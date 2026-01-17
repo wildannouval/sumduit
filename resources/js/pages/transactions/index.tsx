@@ -1,10 +1,3 @@
-import AppLayout from '@/layouts/app-layout';
-import { formatIDR } from '@/lib/money';
-import { type BreadcrumbItem } from '@/types';
-import { Head, router, useForm } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
-
-// Shadcn UI Components
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
     AlertDialog,
@@ -16,7 +9,10 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
     Dialog,
     DialogContent,
@@ -24,18 +20,68 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import {
-    AlertCircle,
+    DropdownMenu,
+    DropdownMenuCheckboxItem,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import AppLayout from '@/layouts/app-layout';
+import { formatIDR } from '@/lib/money';
+import { type BreadcrumbItem } from '@/types';
+import { Head, router, useForm } from '@inertiajs/react';
+import {
+    ColumnDef,
+    ColumnFiltersState,
+    SortingState,
+    VisibilityState,
+    flexRender,
+    getCoreRowModel,
+    getFilteredRowModel,
+    getPaginationRowModel,
+    getSortedRowModel,
+    useReactTable,
+} from '@tanstack/react-table';
+import {
+    ArrowDownLeft,
+    ArrowUpRight,
     CheckCircle2,
+    ChevronDown,
+    Columns2,
     Edit2,
+    History, // Ganti LayoutColumns menjadi Columns2
+    MoreHorizontal,
     PlusCircle,
+    Search,
     Target,
     Trash2,
+    Wallet as WalletIcon,
 } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Transactions', href: '/transactions' },
+    { title: 'Arus Kas', href: '/transactions' },
 ];
 
 export default function TransactionIndex({
@@ -49,6 +95,13 @@ export default function TransactionIndex({
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
     const [selectedTx, setSelectedTx] = useState<any>(null);
+
+    const [sorting, setSorting] = useState<SortingState>([]);
+    const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+    const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(
+        {},
+    );
+    const [rowSelection, setRowSelection] = useState({});
 
     const form = useForm({
         type: 'expense' as 'income' | 'expense',
@@ -86,9 +139,9 @@ export default function TransactionIndex({
         const url = isAddOpen
             ? '/transactions'
             : `/transactions/${selectedTx.id}`;
-        const action = isAddOpen ? form.post : form.put;
+        const method = isAddOpen ? 'post' : 'put';
 
-        action(url, {
+        router[method](url, form.data as any, {
             onSuccess: () => {
                 setIsAddOpen(false);
                 setIsEditOpen(false);
@@ -104,136 +157,403 @@ export default function TransactionIndex({
         }
     };
 
+    const columns: ColumnDef<any>[] = [
+        {
+            id: 'select',
+            header: ({ table }) => (
+                <Checkbox
+                    checked={
+                        table.getIsAllPageRowsSelected() ||
+                        (table.getIsSomePageRowsSelected() && 'indeterminate')
+                    }
+                    onCheckedChange={(value) =>
+                        table.toggleAllPageRowsSelected(!!value)
+                    }
+                    aria-label="Select all"
+                />
+            ),
+            cell: ({ row }) => (
+                <Checkbox
+                    checked={row.getIsSelected()}
+                    onCheckedChange={(value) => row.toggleSelected(!!value)}
+                    aria-label="Select row"
+                />
+            ),
+            enableSorting: false,
+            enableHiding: false,
+        },
+        {
+            accessorKey: 'occurred_at',
+            header: 'Tanggal',
+            cell: ({ row }) => (
+                <div className="text-xs font-medium text-muted-foreground">
+                    {row.getValue('occurred_at')}
+                </div>
+            ),
+        },
+        {
+            accessorKey: 'category',
+            header: 'Kategori & Dompet',
+            cell: ({ row }) => {
+                const tx = row.original;
+                return (
+                    <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-2">
+                            <span className="text-sm font-bold">
+                                {tx.category?.name || 'Lainnya'}
+                            </span>
+                            <Badge
+                                variant={
+                                    tx.type === 'income'
+                                        ? 'outline'
+                                        : 'destructive'
+                                }
+                                className={
+                                    tx.type === 'income'
+                                        ? 'border-emerald-500 bg-emerald-50 text-[10px] text-emerald-600'
+                                        : 'text-[10px]'
+                                }
+                            >
+                                {tx.type === 'income' ? 'Masuk' : 'Keluar'}
+                            </Badge>
+                        </div>
+                        <div className="flex items-center gap-2 text-[10px] tracking-tight text-muted-foreground uppercase">
+                            <WalletIcon className="h-3 w-3" /> {tx.wallet?.name}
+                        </div>
+                    </div>
+                );
+            },
+        },
+        {
+            accessorKey: 'note',
+            header: 'Catatan',
+            cell: ({ row }) => (
+                <div className="max-w-[200px] truncate text-xs text-muted-foreground italic">
+                    {row.getValue('note') || '-'}
+                </div>
+            ),
+        },
+        {
+            accessorKey: 'amount',
+            header: () => <div className="text-right">Nominal</div>,
+            cell: ({ row }) => {
+                const tx = row.original;
+                return (
+                    <div
+                        className={`text-right font-black ${tx.type === 'income' ? 'text-emerald-600' : 'text-red-600'}`}
+                    >
+                        {tx.type === 'income' ? '+' : '-'}{' '}
+                        {formatIDR(Number(tx.amount))}
+                    </div>
+                );
+            },
+        },
+        {
+            id: 'actions',
+            enableHiding: false,
+            cell: ({ row }) => {
+                const tx = row.original;
+                return (
+                    <div className="text-right">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" className="h-8 w-8 p-0">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>Aksi</DropdownMenuLabel>
+                                <DropdownMenuItem onClick={() => openEdit(tx)}>
+                                    <Edit2 className="mr-2 h-3.5 w-3.5" /> Ubah
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                    className="text-red-600"
+                                    onClick={() => {
+                                        setSelectedTx(tx);
+                                        setIsDeleteOpen(true);
+                                    }}
+                                >
+                                    <Trash2 className="mr-2 h-3.5 w-3.5" />{' '}
+                                    Hapus
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
+                );
+            },
+        },
+    ];
+
+    const table = useReactTable({
+        data: transactions.data,
+        columns,
+        onSortingChange: setSorting,
+        onColumnFiltersChange: setColumnFilters,
+        getCoreRowModel: getCoreRowModel(),
+        getPaginationRowModel: getPaginationRowModel(),
+        getSortedRowModel: getSortedRowModel(),
+        getFilteredRowModel: getFilteredRowModel(),
+        onColumnVisibilityChange: setColumnVisibility,
+        onRowSelectionChange: setRowSelection,
+        state: {
+            sorting,
+            columnFilters,
+            columnVisibility,
+            rowSelection,
+        },
+    });
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Arus Kas" />
-            <div className="flex flex-col gap-6 p-6">
-                {/* Notification Banner */}
-                <div className="space-y-3">
-                    {flash.success && (
-                        <Alert className="animate-in border-emerald-200 bg-emerald-50 text-emerald-800 fade-in slide-in-from-top-2">
-                            <CheckCircle2 className="h-4 w-4 stroke-emerald-600" />
-                            <AlertTitle className="font-bold">
-                                Berhasil
-                            </AlertTitle>
-                            <AlertDescription>{flash.success}</AlertDescription>
-                        </Alert>
-                    )}
-                    {flash.error && (
-                        <Alert
-                            variant="destructive"
-                            className="animate-in fade-in slide-in-from-top-2"
-                        >
-                            <AlertCircle className="h-4 w-4" />
-                            <AlertTitle className="font-bold">Gagal</AlertTitle>
-                            <AlertDescription>{flash.error}</AlertDescription>
-                        </Alert>
-                    )}
-                </div>
 
-                <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-6 p-6">
+                {flash.success && (
+                    <Alert className="border-emerald-200 bg-emerald-50 text-emerald-900">
+                        <CheckCircle2 className="h-4 w-4 stroke-emerald-600" />
+                        <AlertTitle className="font-bold">Berhasil</AlertTitle>
+                        <AlertDescription>{flash.success}</AlertDescription>
+                    </Alert>
+                )}
+
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <h1 className="text-2xl font-black tracking-tight">
-                            Arus Kas
+                        <h1 className="flex items-center gap-2 text-2xl font-black tracking-tight uppercase">
+                            <History className="h-6 w-6 text-primary" /> Arus
+                            Kas
                         </h1>
-                        <p className="text-sm text-muted-foreground">
-                            Catat aktivitas keuangan Anda secara harian.
+                        <p className="text-xs tracking-widest text-muted-foreground uppercase">
+                            Manajemen transaksi keuangan Anda.
                         </p>
                     </div>
-                    <Button onClick={() => setIsAddOpen(true)}>
+                    <Button
+                        onClick={() => setIsAddOpen(true)}
+                        className="px-6 text-xs font-bold tracking-widest uppercase shadow-lg"
+                    >
                         <PlusCircle className="mr-2 h-4 w-4" /> Catat Transaksi
                     </Button>
                 </div>
 
-                {/* Table Section */}
-                <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
-                    <table className="w-full text-sm">
-                        <thead className="border-b bg-muted/50 text-left">
-                            <tr className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
-                                <th className="p-4">Tanggal</th>
-                                <th className="p-4">Keterangan</th>
-                                <th className="p-4 text-right">Nominal</th>
-                                <th className="p-4 text-right">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y">
-                            {transactions.data.map((t: any) => (
-                                <tr
-                                    key={t.id}
-                                    className="transition-colors hover:bg-muted/20"
-                                >
-                                    <td className="p-4 align-top text-muted-foreground">
-                                        {t.occurred_at}
-                                    </td>
-                                    <td className="p-4">
-                                        <div className="font-bold">
-                                            {t.category?.name || 'Lainnya'}
-                                        </div>
-                                        <div className="text-[10px] font-medium uppercase italic opacity-60">
-                                            Dompet: {t.wallet?.name}
-                                        </div>
-                                        {t.goal && (
-                                            <div className="mt-1 flex items-center gap-1 text-[10px] font-bold text-blue-600 uppercase">
-                                                <Target className="h-3 w-3" />{' '}
-                                                {t.goal.name}
-                                            </div>
-                                        )}
-                                        {t.note && (
-                                            <p className="mt-1 text-xs font-medium text-muted-foreground italic">
-                                                "{t.note}"
-                                            </p>
-                                        )}
-                                    </td>
-                                    <td
-                                        className={`p-4 text-right font-black ${t.type === 'income' ? 'text-emerald-600' : 'text-red-600'}`}
+                <Tabs defaultValue="all" className="w-full">
+                    <div className="mb-4 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                        <TabsList className="grid w-full grid-cols-3 md:w-[400px]">
+                            <TabsTrigger
+                                value="all"
+                                onClick={() =>
+                                    table
+                                        .getColumn('category')
+                                        ?.setFilterValue('')
+                                }
+                            >
+                                Semua
+                            </TabsTrigger>
+                            <TabsTrigger
+                                value="income"
+                                onClick={() =>
+                                    table.setColumnFilters([
+                                        { id: 'category', value: 'income' },
+                                    ])
+                                }
+                            >
+                                Pemasukan
+                            </TabsTrigger>
+                            <TabsTrigger
+                                value="expense"
+                                onClick={() =>
+                                    table.setColumnFilters([
+                                        { id: 'category', value: 'expense' },
+                                    ])
+                                }
+                            >
+                                Pengeluaran
+                            </TabsTrigger>
+                        </TabsList>
+
+                        <div className="flex items-center gap-2">
+                            <div className="relative w-full md:w-[250px]">
+                                <Search className="absolute top-2.5 left-2.5 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                    placeholder="Cari catatan..."
+                                    value={
+                                        (table
+                                            .getColumn('note')
+                                            ?.getFilterValue() as string) ?? ''
+                                    }
+                                    onChange={(event) =>
+                                        table
+                                            .getColumn('note')
+                                            ?.setFilterValue(event.target.value)
+                                    }
+                                    className="h-9 bg-background pl-9 text-xs"
+                                />
+                            </div>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-9"
                                     >
-                                        {t.type === 'income' ? '+' : '-'}
-                                        {formatIDR(Number(t.amount))}
-                                    </td>
-                                    <td className="p-4 text-right">
-                                        <div className="flex justify-end gap-1">
-                                            <Button
-                                                size="icon"
-                                                variant="ghost"
-                                                className="h-8 w-8"
-                                                onClick={() => openEdit(t)}
+                                        <Columns2 className="mr-2 h-4 w-4" />{' '}
+                                        Kolom{' '}
+                                        <ChevronDown className="ml-2 h-4 w-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    {table
+                                        .getAllColumns()
+                                        .filter((column) => column.getCanHide())
+                                        .map((column) => (
+                                            <DropdownMenuCheckboxItem
+                                                key={column.id}
+                                                className="capitalize"
+                                                checked={column.getIsVisible()}
+                                                onCheckedChange={(value) =>
+                                                    column.toggleVisibility(
+                                                        !!value,
+                                                    )
+                                                }
                                             >
-                                                <Edit2 className="h-3.5 w-3.5" />
-                                            </Button>
-                                            <Button
-                                                size="icon"
-                                                variant="ghost"
-                                                className="h-8 w-8 text-red-500 hover:text-red-600"
-                                                onClick={() => {
-                                                    setSelectedTx(t);
-                                                    setIsDeleteOpen(true);
-                                                }}
+                                                {column.id}
+                                            </DropdownMenuCheckboxItem>
+                                        ))}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
+                    </div>
+
+                    <Card className="overflow-hidden border-none shadow-sm ring-1 ring-border">
+                        <CardContent className="p-0">
+                            <Table>
+                                <TableHeader className="bg-muted/50">
+                                    {table
+                                        .getHeaderGroups()
+                                        .map((headerGroup) => (
+                                            <TableRow key={headerGroup.id}>
+                                                {headerGroup.headers.map(
+                                                    (header) => (
+                                                        <TableHead
+                                                            key={header.id}
+                                                            className="py-3 text-[10px] font-black tracking-widest uppercase"
+                                                        >
+                                                            {header.isPlaceholder
+                                                                ? null
+                                                                : flexRender(
+                                                                      header
+                                                                          .column
+                                                                          .columnDef
+                                                                          .header,
+                                                                      header.getContext(),
+                                                                  )}
+                                                        </TableHead>
+                                                    ),
+                                                )}
+                                            </TableRow>
+                                        ))}
+                                </TableHeader>
+                                <TableBody>
+                                    {table.getRowModel().rows?.length ? (
+                                        table.getRowModel().rows.map((row) => (
+                                            <TableRow
+                                                key={row.id}
+                                                data-state={
+                                                    row.getIsSelected() &&
+                                                    'selected'
+                                                }
+                                                className="group transition-colors hover:bg-muted/30"
                                             >
-                                                <Trash2 className="h-3.5 w-3.5" />
-                                            </Button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                                                {row
+                                                    .getVisibleCells()
+                                                    .map((cell) => (
+                                                        <TableCell
+                                                            key={cell.id}
+                                                            className="py-3"
+                                                        >
+                                                            {flexRender(
+                                                                cell.column
+                                                                    .columnDef
+                                                                    .cell,
+                                                                cell.getContext(),
+                                                            )}
+                                                        </TableCell>
+                                                    ))}
+                                            </TableRow>
+                                        ))
+                                    ) : (
+                                        <TableRow>
+                                            <TableCell
+                                                colSpan={columns.length}
+                                                className="h-32 text-center text-muted-foreground"
+                                            >
+                                                Tidak ada data transaksi
+                                                ditemukan.
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                        <div className="flex items-center justify-between border-t bg-muted/10 px-4 py-4 text-[10px] font-bold text-muted-foreground uppercase">
+                            <div>
+                                {
+                                    table.getFilteredSelectedRowModel().rows
+                                        .length
+                                }{' '}
+                                dari {table.getFilteredRowModel().rows.length}{' '}
+                                baris dipilih.
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() =>
+                                        router.get(transactions.prev_page_url)
+                                    }
+                                    disabled={!transactions.prev_page_url}
+                                    className="h-8 text-[10px] font-black uppercase"
+                                >
+                                    Sebelumnya
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() =>
+                                        router.get(transactions.next_page_url)
+                                    }
+                                    disabled={!transactions.next_page_url}
+                                    className="h-8 text-[10px] font-black uppercase"
+                                >
+                                    Berikutnya
+                                </Button>
+                            </div>
+                        </div>
+                    </Card>
+                </Tabs>
             </div>
 
-            {/* MODAL: CREATE & EDIT */}
             <Dialog
                 open={isAddOpen || isEditOpen}
-                onOpenChange={(v) =>
-                    !v && (setIsAddOpen(false) || setIsEditOpen(false))
-                }
+                onOpenChange={(v) => {
+                    if (!v) {
+                        setIsAddOpen(false);
+                        setIsEditOpen(false);
+                    }
+                }}
             >
                 <DialogContent className="sm:max-w-[425px]">
                     <DialogHeader>
-                        <DialogTitle>
+                        <DialogTitle className="flex items-center gap-2 text-xl font-black tracking-tighter uppercase">
+                            {isAddOpen ? (
+                                <PlusCircle className="h-5 w-5 text-primary" />
+                            ) : (
+                                <Edit2 className="h-5 w-5 text-primary" />
+                            )}
                             {isAddOpen ? 'Catat Transaksi' : 'Ubah Transaksi'}
                         </DialogTitle>
                     </DialogHeader>
-                    <form onSubmit={submitForm} className="space-y-4 pt-2">
+
+                    <form onSubmit={submitForm} className="space-y-5 pt-2">
                         <div className="grid grid-cols-2 gap-2 rounded-lg bg-muted p-1">
                             <Button
                                 type="button"
@@ -243,9 +563,10 @@ export default function TransactionIndex({
                                         ? 'destructive'
                                         : 'ghost'
                                 }
-                                className="w-full"
+                                className="w-full font-bold shadow-sm"
                                 onClick={() => form.setData('type', 'expense')}
                             >
+                                <ArrowDownLeft className="mr-1 h-3 w-3" />{' '}
                                 Pengeluaran
                             </Button>
                             <Button
@@ -256,20 +577,22 @@ export default function TransactionIndex({
                                         ? 'default'
                                         : 'ghost'
                                 }
-                                className="w-full"
+                                className={`w-full font-bold ${form.data.type === 'income' ? 'bg-emerald-600 hover:bg-emerald-700' : ''}`}
                                 onClick={() => form.setData('type', 'income')}
                             >
+                                <ArrowUpRight className="mr-1 h-3 w-3" />{' '}
                                 Pemasukan
                             </Button>
                         </div>
 
                         <div className="grid gap-4">
-                            <div className="space-y-1">
-                                <label className="text-[10px] font-black uppercase opacity-60">
-                                    Nominal
-                                </label>
+                            <div className="space-y-2">
+                                <Label className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">
+                                    Nominal (Rp)
+                                </Label>
                                 <Input
                                     type="number"
+                                    className="text-lg font-bold"
                                     value={form.data.amount}
                                     onChange={(e) =>
                                         form.setData(
@@ -281,89 +604,115 @@ export default function TransactionIndex({
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-1">
-                                    <label className="text-[10px] font-black uppercase opacity-60">
+                                <div className="space-y-2">
+                                    <Label className="text-[10px] font-black text-muted-foreground uppercase">
                                         Dompet
-                                    </label>
-                                    <select
-                                        className="h-10 w-full rounded-md border bg-background px-3 text-sm"
-                                        value={form.data.wallet_id ?? ''}
-                                        onChange={(e) =>
-                                            form.setData(
-                                                'wallet_id',
-                                                e.target.value
-                                                    ? Number(e.target.value)
-                                                    : null,
-                                            )
+                                    </Label>
+                                    <Select
+                                        value={String(form.data.wallet_id)}
+                                        onValueChange={(v) =>
+                                            form.setData('wallet_id', Number(v))
                                         }
                                     >
-                                        {wallets.map((w: any) => (
-                                            <option key={w.id} value={w.id}>
-                                                {w.name}
-                                            </option>
-                                        ))}
-                                    </select>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Dompet" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {wallets.map((w: any) => (
+                                                <SelectItem
+                                                    key={w.id}
+                                                    value={String(w.id)}
+                                                >
+                                                    {w.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
                                 </div>
-                                <div className="space-y-1">
-                                    <label className="text-[10px] font-black uppercase opacity-60">
+                                <div className="space-y-2">
+                                    <Label className="text-[10px] font-black text-muted-foreground uppercase">
                                         Kategori
-                                    </label>
-                                    <select
-                                        className="h-10 w-full rounded-md border bg-background px-3 text-sm"
-                                        value={form.data.category_id ?? ''}
-                                        onChange={(e) =>
+                                    </Label>
+                                    <Select
+                                        value={
+                                            form.data.category_id
+                                                ? String(form.data.category_id)
+                                                : 'null'
+                                        }
+                                        onValueChange={(v) =>
                                             form.setData(
                                                 'category_id',
-                                                e.target.value
-                                                    ? Number(e.target.value)
-                                                    : null,
+                                                v === 'null' ? null : Number(v),
                                             )
                                         }
                                     >
-                                        <option value="">Lainnya</option>
-                                        {categories
-                                            .filter(
-                                                (c: any) =>
-                                                    c.type === form.data.type,
-                                            )
-                                            .map((c: any) => (
-                                                <option key={c.id} value={c.id}>
-                                                    {c.name}
-                                                </option>
-                                            ))}
-                                    </select>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Kategori" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="null">
+                                                Lainnya
+                                            </SelectItem>
+                                            {categories
+                                                .filter(
+                                                    (c: any) =>
+                                                        c.type ===
+                                                        form.data.type,
+                                                )
+                                                .map((c: any) => (
+                                                    <SelectItem
+                                                        key={c.id}
+                                                        value={String(c.id)}
+                                                    >
+                                                        {c.name}
+                                                    </SelectItem>
+                                                ))}
+                                        </SelectContent>
+                                    </Select>
                                 </div>
                             </div>
 
-                            <div className="space-y-1">
-                                <label className="text-[10px] font-black tracking-tighter text-blue-600 uppercase">
-                                    Hubungkan ke Goal (Tabungan)
-                                </label>
-                                <select
-                                    className="h-10 w-full rounded-md border bg-blue-50/30 px-3 text-sm"
-                                    value={form.data.goal_id ?? ''}
-                                    onChange={(e) =>
+                            <div className="space-y-2 rounded-md bg-blue-50/50 p-3 ring-1 ring-blue-100">
+                                <Label className="flex items-center gap-1 text-[9px] font-black text-blue-600 uppercase">
+                                    <Target className="h-3 w-3" /> Hubungkan
+                                    Tabungan
+                                </Label>
+                                <Select
+                                    value={
+                                        form.data.goal_id
+                                            ? String(form.data.goal_id)
+                                            : 'null'
+                                    }
+                                    onValueChange={(v) =>
                                         form.setData(
                                             'goal_id',
-                                            e.target.value
-                                                ? Number(e.target.value)
-                                                : null,
+                                            v === 'null' ? null : Number(v),
                                         )
                                     }
                                 >
-                                    <option value="">Tidak Ada</option>
-                                    {goals.map((g: any) => (
-                                        <option key={g.id} value={g.id}>
-                                            {g.name}
-                                        </option>
-                                    ))}
-                                </select>
+                                    <SelectTrigger className="h-8 border-blue-200 bg-background text-xs font-medium">
+                                        <SelectValue placeholder="Pilih Goal" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="null">
+                                            Tidak Ada
+                                        </SelectItem>
+                                        {goals.map((g: any) => (
+                                            <SelectItem
+                                                key={g.id}
+                                                value={String(g.id)}
+                                            >
+                                                {g.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
 
-                            <div className="space-y-1">
-                                <label className="text-[10px] font-black uppercase opacity-60">
+                            <div className="space-y-2">
+                                <Label className="text-[10px] font-black text-muted-foreground uppercase">
                                     Tanggal & Catatan
-                                </label>
+                                </Label>
                                 <Input
                                     type="date"
                                     value={form.data.occurred_at}
@@ -375,29 +724,30 @@ export default function TransactionIndex({
                                     }
                                 />
                                 <Input
-                                    className="mt-2"
                                     value={form.data.note}
                                     onChange={(e) =>
                                         form.setData('note', e.target.value)
                                     }
-                                    placeholder="Contoh: Makan siang bareng tim"
+                                    placeholder="Misal: Makan siang"
                                 />
                             </div>
                         </div>
-                        <DialogFooter className="mt-4">
+
+                        <DialogFooter>
                             <Button
                                 type="submit"
                                 disabled={form.processing}
-                                className="w-full font-bold"
+                                className="h-11 w-full text-xs font-black tracking-widest uppercase"
                             >
-                                Simpan Transaksi
+                                {form.processing
+                                    ? 'Menyimpan...'
+                                    : 'Simpan Transaksi'}
                             </Button>
                         </DialogFooter>
                     </form>
                 </DialogContent>
             </Dialog>
 
-            {/* ALERT DIALOG: DELETE */}
             <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
@@ -405,15 +755,15 @@ export default function TransactionIndex({
                             Hapus transaksi ini?
                         </AlertDialogTitle>
                         <AlertDialogDescription>
-                            Data akan dihapus permanen dan saldo dompet serta
-                            target tabungan akan dikembalikan secara otomatis.
+                            Data akan dihapus permanen dan saldo akan
+                            disesuaikan.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel>Batal</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={confirmDelete}
-                            className="bg-red-600 hover:bg-red-700"
+                            className="bg-red-600 font-bold hover:bg-red-700"
                         >
                             Hapus
                         </AlertDialogAction>
