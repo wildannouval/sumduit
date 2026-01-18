@@ -11,6 +11,7 @@ use App\Models\Transaction;
 use App\Models\WalletTransfer;
 use App\Observers\TransactionObserver;
 use App\Observers\WalletTransferObserver;
+use Illuminate\Support\Facades\URL;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -27,6 +28,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        if (config('app.env') === 'production') {
+            URL::forceScheme('https');
+        }
+
         $this->configureDefaults();
         Transaction::observe(TransactionObserver::class);
         WalletTransfer::observe(WalletTransferObserver::class);

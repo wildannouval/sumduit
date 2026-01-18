@@ -56,4 +56,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/reports', [ReportController::class, 'index'])->name('reports');
 });
 
+Route::get('/api/migrate', function () {
+    if (request()->query('key') !== 'rahasia123') {
+        return response()->json(['message' => 'Unauthorized'], 401);
+    }
+
+    try {
+        \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+        return \Illuminate\Support\Facades\Artisan::output();
+    } catch (\Exception $e) {
+        return $e->getMessage();
+    }
+});
+
 require __DIR__ . '/settings.php';
