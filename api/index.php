@@ -1,13 +1,16 @@
 <?php
 // api/index.php
 
-// 1. Paksa folder storage ke /tmp karena hanya itu yang bisa ditulisi di Vercel
 $storagePath = '/tmp/storage';
-if (!is_dir($storagePath . '/framework/views')) {
-    mkdir($storagePath . '/framework/views', 0755, true);
-    mkdir($storagePath . '/framework/sessions', 0755, true);
-    mkdir($storagePath . '/framework/cache', 0755, true);
-}
 
-// 2. Jalankan aplikasi melalui public/index.php asli
+@mkdir($storagePath . '/framework/views', 0755, true);
+@mkdir($storagePath . '/framework/sessions', 0755, true);
+@mkdir($storagePath . '/framework/cache', 0755, true);
+@mkdir($storagePath . '/framework/cache/data', 0755, true);
+
+// Pastikan Laravel membaca storage path ini
+putenv('LARAVEL_STORAGE_PATH=' . $storagePath);
+$_ENV['LARAVEL_STORAGE_PATH'] = $storagePath;
+$_SERVER['LARAVEL_STORAGE_PATH'] = $storagePath;
+
 require __DIR__ . '/../public/index.php';
