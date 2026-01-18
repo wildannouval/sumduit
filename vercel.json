@@ -1,19 +1,15 @@
 {
     "version": 2,
     "framework": null,
-    "outputDirectory": ".",
     "functions": {
         "api/index.php": {
             "runtime": "vercel-php@0.7.2",
             "includeFiles": "{app/**,bootstrap/**,config/**,database/**,resources/**,routes/**,storage/**,vendor/**,artisan,composer.json,composer.lock,public/**}"
         }
     },
-    "routes": [
-        { "src": "/build/(.*)", "dest": "/public/build/$1" },
-
-        { "handle": "filesystem" },
-
-        { "src": "/(.*)", "dest": "/api/index.php" }
+    "rewrites": [
+        { "source": "/build/:path*", "destination": "/public/build/:path*" },
+        { "source": "/(.*)", "destination": "/api/index.php" }
     ],
     "env": {
         "APP_ENV": "production",
