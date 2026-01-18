@@ -4,19 +4,7 @@
     "functions": {
         "api/index.php": {
             "runtime": "vercel-php@0.7.2",
-            "includeFiles": [
-                "app/**",
-                "bootstrap/**",
-                "config/**",
-                "database/**",
-                "resources/**",
-                "routes/**",
-                "storage/**",
-                "vendor/**",
-                "artisan",
-                "composer.json",
-                "composer.lock"
-            ]
+            "includeFiles": "{app/**,bootstrap/**,config/**,database/**,resources/**,routes/**,storage/**,vendor/**,artisan,composer.json,composer.lock,public/**}"
         }
     },
     "routes": [
@@ -36,10 +24,10 @@
         "APP_ROUTES_CACHE": "/tmp/routes.php",
         "APP_SERVICES_CACHE": "/tmp/services.php",
 
+        "LARAVEL_STORAGE_PATH": "/tmp/storage",
         "VIEW_COMPILED_PATH": "/tmp/storage/framework/views",
-        "CACHE_STORE": "array",
-        "SESSION_DRIVER": "cookie",
 
-        "LARAVEL_STORAGE_PATH": "/tmp/storage"
+        "CACHE_STORE": "array",
+        "SESSION_DRIVER": "cookie"
     }
 }
