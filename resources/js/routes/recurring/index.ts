@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../wayfinder'
 /**
 * @see \App\Http\Controllers\RecurringTemplateController::index
- * @see app/Console/Commands/ProcessRecurringTransactions.php:14
+ * @see app/Http/Controllers/RecurringTemplateController.php:14
  * @route '/recurring'
  */
 export const index = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -16,7 +16,7 @@ index.definition = {
 
 /**
 * @see \App\Http\Controllers\RecurringTemplateController::index
- * @see app/Console/Commands/ProcessRecurringTransactions.php:14
+ * @see app/Http/Controllers/RecurringTemplateController.php:14
  * @route '/recurring'
  */
 index.url = (options?: RouteQueryOptions) => {
@@ -25,7 +25,7 @@ index.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\RecurringTemplateController::index
- * @see app/Console/Commands/ProcessRecurringTransactions.php:14
+ * @see app/Http/Controllers/RecurringTemplateController.php:14
  * @route '/recurring'
  */
 index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -34,7 +34,7 @@ index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\RecurringTemplateController::index
- * @see app/Console/Commands/ProcessRecurringTransactions.php:14
+ * @see app/Http/Controllers/RecurringTemplateController.php:14
  * @route '/recurring'
  */
 index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -44,7 +44,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\Http\Controllers\RecurringTemplateController::index
- * @see app/Console/Commands/ProcessRecurringTransactions.php:14
+ * @see app/Http/Controllers/RecurringTemplateController.php:14
  * @route '/recurring'
  */
     const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -54,7 +54,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\Http\Controllers\RecurringTemplateController::index
- * @see app/Console/Commands/ProcessRecurringTransactions.php:14
+ * @see app/Http/Controllers/RecurringTemplateController.php:14
  * @route '/recurring'
  */
         indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -63,7 +63,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\Http\Controllers\RecurringTemplateController::index
- * @see app/Console/Commands/ProcessRecurringTransactions.php:14
+ * @see app/Http/Controllers/RecurringTemplateController.php:14
  * @route '/recurring'
  */
         indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -79,7 +79,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     index.form = indexForm
 /**
 * @see \App\Http\Controllers\RecurringTemplateController::store
- * @see app/Console/Commands/ProcessRecurringTransactions.php:31
+ * @see app/Http/Controllers/RecurringTemplateController.php:24
  * @route '/recurring'
  */
 export const store = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -94,7 +94,7 @@ store.definition = {
 
 /**
 * @see \App\Http\Controllers\RecurringTemplateController::store
- * @see app/Console/Commands/ProcessRecurringTransactions.php:31
+ * @see app/Http/Controllers/RecurringTemplateController.php:24
  * @route '/recurring'
  */
 store.url = (options?: RouteQueryOptions) => {
@@ -103,7 +103,7 @@ store.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\RecurringTemplateController::store
- * @see app/Console/Commands/ProcessRecurringTransactions.php:31
+ * @see app/Http/Controllers/RecurringTemplateController.php:24
  * @route '/recurring'
  */
 store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -113,7 +113,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
     /**
 * @see \App\Http\Controllers\RecurringTemplateController::store
- * @see app/Console/Commands/ProcessRecurringTransactions.php:31
+ * @see app/Http/Controllers/RecurringTemplateController.php:24
  * @route '/recurring'
  */
     const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -123,7 +123,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
             /**
 * @see \App\Http\Controllers\RecurringTemplateController::store
- * @see app/Console/Commands/ProcessRecurringTransactions.php:31
+ * @see app/Http/Controllers/RecurringTemplateController.php:24
  * @route '/recurring'
  */
         storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -134,7 +134,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     store.form = storeForm
 /**
 * @see \App\Http\Controllers\RecurringTemplateController::update
- * @see app/Console/Commands/ProcessRecurringTransactions.php:0
+ * @see app/Http/Controllers/RecurringTemplateController.php:0
  * @route '/recurring/{recurring}'
  */
 export const update = (args: { recurring: string | number } | [recurring: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -149,7 +149,7 @@ update.definition = {
 
 /**
 * @see \App\Http\Controllers\RecurringTemplateController::update
- * @see app/Console/Commands/ProcessRecurringTransactions.php:0
+ * @see app/Http/Controllers/RecurringTemplateController.php:0
  * @route '/recurring/{recurring}'
  */
 update.url = (args: { recurring: string | number } | [recurring: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -177,7 +177,7 @@ update.url = (args: { recurring: string | number } | [recurring: string | number
 
 /**
 * @see \App\Http\Controllers\RecurringTemplateController::update
- * @see app/Console/Commands/ProcessRecurringTransactions.php:0
+ * @see app/Http/Controllers/RecurringTemplateController.php:0
  * @route '/recurring/{recurring}'
  */
 update.put = (args: { recurring: string | number } | [recurring: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -186,7 +186,7 @@ update.put = (args: { recurring: string | number } | [recurring: string | number
 })
 /**
 * @see \App\Http\Controllers\RecurringTemplateController::update
- * @see app/Console/Commands/ProcessRecurringTransactions.php:0
+ * @see app/Http/Controllers/RecurringTemplateController.php:0
  * @route '/recurring/{recurring}'
  */
 update.patch = (args: { recurring: string | number } | [recurring: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
@@ -196,7 +196,7 @@ update.patch = (args: { recurring: string | number } | [recurring: string | numb
 
     /**
 * @see \App\Http\Controllers\RecurringTemplateController::update
- * @see app/Console/Commands/ProcessRecurringTransactions.php:0
+ * @see app/Http/Controllers/RecurringTemplateController.php:0
  * @route '/recurring/{recurring}'
  */
     const updateForm = (args: { recurring: string | number } | [recurring: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -211,7 +211,7 @@ update.patch = (args: { recurring: string | number } | [recurring: string | numb
 
             /**
 * @see \App\Http\Controllers\RecurringTemplateController::update
- * @see app/Console/Commands/ProcessRecurringTransactions.php:0
+ * @see app/Http/Controllers/RecurringTemplateController.php:0
  * @route '/recurring/{recurring}'
  */
         updateForm.put = (args: { recurring: string | number } | [recurring: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -225,7 +225,7 @@ update.patch = (args: { recurring: string | number } | [recurring: string | numb
         })
             /**
 * @see \App\Http\Controllers\RecurringTemplateController::update
- * @see app/Console/Commands/ProcessRecurringTransactions.php:0
+ * @see app/Http/Controllers/RecurringTemplateController.php:0
  * @route '/recurring/{recurring}'
  */
         updateForm.patch = (args: { recurring: string | number } | [recurring: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -241,7 +241,7 @@ update.patch = (args: { recurring: string | number } | [recurring: string | numb
     update.form = updateForm
 /**
 * @see \App\Http\Controllers\RecurringTemplateController::destroy
- * @see app/Console/Commands/ProcessRecurringTransactions.php:51
+ * @see app/Http/Controllers/RecurringTemplateController.php:40
  * @route '/recurring/{recurring}'
  */
 export const destroy = (args: { recurring: string | number } | [recurring: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -256,7 +256,7 @@ destroy.definition = {
 
 /**
 * @see \App\Http\Controllers\RecurringTemplateController::destroy
- * @see app/Console/Commands/ProcessRecurringTransactions.php:51
+ * @see app/Http/Controllers/RecurringTemplateController.php:40
  * @route '/recurring/{recurring}'
  */
 destroy.url = (args: { recurring: string | number } | [recurring: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -284,7 +284,7 @@ destroy.url = (args: { recurring: string | number } | [recurring: string | numbe
 
 /**
 * @see \App\Http\Controllers\RecurringTemplateController::destroy
- * @see app/Console/Commands/ProcessRecurringTransactions.php:51
+ * @see app/Http/Controllers/RecurringTemplateController.php:40
  * @route '/recurring/{recurring}'
  */
 destroy.delete = (args: { recurring: string | number } | [recurring: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -294,7 +294,7 @@ destroy.delete = (args: { recurring: string | number } | [recurring: string | nu
 
     /**
 * @see \App\Http\Controllers\RecurringTemplateController::destroy
- * @see app/Console/Commands/ProcessRecurringTransactions.php:51
+ * @see app/Http/Controllers/RecurringTemplateController.php:40
  * @route '/recurring/{recurring}'
  */
     const destroyForm = (args: { recurring: string | number } | [recurring: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -309,7 +309,7 @@ destroy.delete = (args: { recurring: string | number } | [recurring: string | nu
 
             /**
 * @see \App\Http\Controllers\RecurringTemplateController::destroy
- * @see app/Console/Commands/ProcessRecurringTransactions.php:51
+ * @see app/Http/Controllers/RecurringTemplateController.php:40
  * @route '/recurring/{recurring}'
  */
         destroyForm.delete = (args: { recurring: string | number } | [recurring: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
